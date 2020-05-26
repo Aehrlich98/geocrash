@@ -12,6 +12,7 @@ use nphysics2d::joint::DefaultJointConstraintSet;
 use nphysics2d::world::{DefaultMechanicalWorld, DefaultGeometricalWorld};
 use nphysics2d::object::*;
 use ncollide2d::shape::{ShapeHandle, Ball};
+use ggez::graphics::DrawParam;
 
 
 fn main() {
@@ -92,6 +93,9 @@ impl EventHandler for MyGame {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, graphics::WHITE);
+
+        let r1 = self.master.draw(ctx)?;
+        graphics::draw(ctx, &r1, DrawParam::default())?;
         graphics::present(ctx)
     }
 }
