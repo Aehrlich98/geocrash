@@ -12,7 +12,7 @@ use nphysics2d::joint::DefaultJointConstraintSet;
 use nphysics2d::world::{DefaultMechanicalWorld, DefaultGeometricalWorld};
 use nphysics2d::object::*;
 use ncollide2d::shape::{ShapeHandle, Ball};
-use ggez::graphics::DrawParam;
+use ggez::graphics::{DrawParam, Image};
 use crate::game_object::GameObject;
 use crate::master::Master;
 
@@ -27,7 +27,7 @@ fn main() {
         .expect("aieee, could not create ggez context!");
 
     // Create an instance of your event handler.
-    let mut my_game = MyGame::new(&mut ctx);
+    let mut my_game = MyGame::new(&mut ctx).unwrap();
 
 //Create game objects:
     //put a rigidbody into bodies BodySet of my_game and push to gamObjList
@@ -59,22 +59,25 @@ struct MyGame {
     master: Master,
     gameObjList: Vec<GameObject>,   //list of all object in game
     count: i32,
+    background_image: Image,
 }
 
 impl MyGame {
-    pub fn new(_ctx: &mut Context) -> MyGame {
-        MyGame {
+    pub fn new(_ctx: &mut Context) -> GameResult<MyGame> {
+        let m = MyGame {
            /* mechanical_world: DefaultMechanicalWorld::new(Vector3::new(0.0, -9.81, 0.0)),
             geometrical_world: DefaultGeometricalWorld::new(),
             bodies: DefaultBodySet::new(),
             colliders: DefaultColliderSet::new(),
             joint_constraints: DefaultJointConstraintSet::new(),
             force_generators: DefaultForceGeneratorSet::new(),*/
-
+            background_image: graphics::Image::new(_ctx, "/images/bg.jpg")?,
             gameObjList: Vec::new(),
             master: Master::new(),
             count: 0,
-        }
+        };
+        Ok(m)
+
     }
 }
 
@@ -97,7 +100,13 @@ impl EventHandler for MyGame {
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
-        graphics::clear(ctx, graphics::WHITE);
+        graphics::clear(ctx, graphics::Color::new(0.3, 0.1, 0.8, 0.8));
+
+
+        let p = ggez::mint::Point2{
+            x: 0.0,
+            y: 0.0};
+        graphics::draw(ctx, &self.background_image, (p, )).unwrap();
 
         let r1 = self.master.draw(ctx);
         graphics::present(ctx)
