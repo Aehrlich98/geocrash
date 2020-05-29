@@ -31,7 +31,7 @@ impl Player {
         };
 
         let r2 = graphics::Mesh::new_circle(context, graphics::DrawMode::fill(), p,
-            radius, tolerance, graphics::Color::new(0.0, 0.0, 1.0, 1.0))?;
+            radius, tolerance, graphics::Color::new(0.7, 0.4, 0.9, 0.8))?;
         graphics::draw(context, &r2, DrawParam::default())?;
         Ok(0)
     }
