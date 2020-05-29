@@ -24,7 +24,8 @@ impl Master{
         //TODO: remove objects that are out of screen and spawn new ones
     }
 
-    pub fn draw(&self, context: &mut Context) -> GameResult<Mesh>{
-        return self.player.draw(context);
+    pub fn draw(&self, context: &mut Context) -> GameResult<i8>{
+        self.player.draw(context);
+        return Ok(0)
     }
 }
