@@ -6,16 +6,27 @@ use nphysics2d::object::{RigidBodyDesc, BodyStatus, RigidBody};
 use nalgebra::{Isometry2, Vector2};
 use rand::prelude::*;
 use std::f32::consts::PI;
+use std::alloc::handle_alloc_error;
 
 
 pub struct Player{
     //TODO: implement player attributes
     score: i32,
-    rigid_body: RigidBody<f64>,
+    //stores a reference to the RigidBodyObject representing the player
+    handle:  Option<RigidBody<f64>>,
 }
 
 impl Player {
     pub fn new() -> Self {
+
+        //TODO: create a new player in the center of the screen
+        Player {
+            score: 0,
+            handle: None,
+        }
+    }
+
+    pub fn createRigidBody() -> RigidBody<f64>{
 
         let left_bound = -50.0;
         let right_bound = 50.0;
@@ -37,14 +48,13 @@ impl Player {
             .max_linear_velocity(10.0)
             .mass(5.0)
             .build();
+        return rigid_body;
 
-        //TODO: create a new player in the center of the screen
-        Player {
-            score: 0,
-            rigid_body: rigid_body,
-        }
     }
 
+    pub fn setHandle(&mut self, handle: RigidBody<f64>){
+        self.handle = Some(handle);
+    }
     pub fn update() {
         //TODO: update player
     }
