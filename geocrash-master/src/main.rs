@@ -1,16 +1,17 @@
 use ggez::*;
 use nphysics2d::*;
 use ncollide2d::*;
-
-use crate::game_object::GameObject;
-use crate::master::Master;
+extern crate nalgebra as na;
+use na::geometry::Point2;
 
 mod game_object;
 mod master;
 mod player;
-mod lib;
 
-static gameSize: Int = 600;
+use crate::master::Master;
+use crate::game_object::GameObject;
+
+static gameSize: i32 = 600;
 
 fn main() {
     // Make a Context.
@@ -24,9 +25,9 @@ fn main() {
     //spawn starting objects:
     //TODO spawn player(s)
     //spawn other GameObjects
-    let pos = (0, 0);
+    let pos: Point2 = Point2::new(gameSize/3, gameSize/3);
     while my_game.gameObjList.length < 1{ //place GameObjects, until max number of allowed Object is reached.
-        my_game.gameObjList.push(GameObject::new(pos, my_game.bodies, my_game.colliders));
+        my_game.gameObjList.push(GameObject::new(pos, my_game.bodies, my_game.colliders, false));
         //TODO place at random positions, check that no two objects are placed "into" each other
        // pos.x() + 10;
         //pos.y() + 10;

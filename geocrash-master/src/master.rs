@@ -1,13 +1,12 @@
 use crate::player::Player;
 use crate::game_object::GameObject;
+use crate::main::gameSize;
 use ggez::*;
 use ggez::graphics::Mesh;
 use ggez::event::{EventHandler};
 use nphysics2d::*;
 use ncollide2d::*;
 extern crate nalgebra as na;
-use rand::prelude::*;
-
 
 use na::{Vector2, Point2, Isometry2};
 use nphysics2d::object::{BodyStatus, RigidBodyDesc};
@@ -18,13 +17,11 @@ use nphysics2d::object::{DefaultBodySet, DefaultColliderSet ,BodySet, ColliderSe
 use nphysics2d::force_generator::{DefaultForceGeneratorSet, ForceGenerator};
 use nphysics2d::joint::{DefaultJointConstraintSet, JointConstraintSet};
 use nphysics2d::world::{DefaultMechanicalWorld, DefaultGeometricalWorld};
-use ncollide2d::pipeline::CollisionWorld;
 
 
 pub struct Master{
     mechanical_world: DefaultMechanicalWorld<f32>,    //N/M types are somehow not right??? Maybe give specific types???
     geometrical_world: DefaultGeometricalWorld<f32>,
-
     bodies: DefaultBodySet<f32>,
     colliders: DefaultColliderSet<f32>,
     joint_constraints: DefaultJointConstraintSet<f32>,
@@ -37,9 +34,9 @@ pub struct Master{
 //TODO: implement structs Player and Enemy
 
 impl Master{
-    pub fn new(ctx: &mut Context) -> Self{
-
-        let mut master = Master{
+    pub fn new(&mut ctx: Context) -> Self{
+        //create Master with all starting conditions
+        Master{
             mechanical_world: DefaultMechanicalWorld::new(Vector2::new(0.0, -9.81)),
             geometrical_world: DefaultGeometricalWorld::new(),
             bodies: DefaultBodySet::new(),
@@ -50,12 +47,7 @@ impl Master{
             gameObjList: Vec::new(),
             player: Player::new(),
             count: 0,
-        };
-
-        //init player
-        master.player.createRigidBody(&mut bodies);
-        master.player.createCollider(&mut bodies, &mut colliders);
-        return master;
+        }
     }
 
     pub fn update(){
@@ -72,6 +64,8 @@ impl Master{
 
 //EventHandler handling events...
 impl EventHandler for Master {
+    //called for each step of the game
+    //TODO: add full game loop.
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
         self.mechanical_world.step(     //move the simulation further one step
             &mut self.geometrical_world,
@@ -81,7 +75,7 @@ impl EventHandler for Master {
             &mut self.force_generators
         );
 
-        //temporary
+        //temporary: end game after count is reached
         println!("Count: {}", self.count);
         if self.count+1 == 10 {
             event::quit(_ctx);  //End game

@@ -5,10 +5,11 @@ use ncollide2d::*;
 extern crate nalgebra as na;
 
 use na::{Vector2, Point2, Isometry2};
-use nphysics2d::object::{BodyStatus, RigidBodyDesc, Collider};
+use ggez::graphics::{DrawParam, BlendMode, Mesh};
+use nphysics2d::object::{BodyStatus, RigidBodyDesc};
 use nphysics2d::math::{Velocity, Inertia};
 use nphysics2d::material::{MaterialHandle, BasicMaterial};
-use nphysics2d::object::{DefaultBodySet, DefaultColliderSet ,BodySet, ColliderSet, ColliderDesc, BodyPartHandle};
+use nphysics2d::object::{DefaultBodySet, DefaultColliderSet ,BodySet, ColliderSet, ColliderDesc, BodyHandle, BodyPartHandle, RigidBody, Collider};
 use nphysics2d::force_generator::{DefaultForceGeneratorSet, ForceGenerator};
 use nphysics2d::joint::{DefaultJointConstraintSet, JointConstraintSet};
 use nphysics2d::world::{DefaultMechanicalWorld, DefaultGeometricalWorld};
@@ -19,12 +20,13 @@ use ncollide2d::shape::{ShapeHandle, Cuboid};
 pub struct GameObject {
     handleRigidBody: BodyPartHandle,    //mutable handles
     handleCollider: BodyPartHandle,
+    isPlayer: bool,
 
 }
 
 impl GameObject {
     //create GameObject, add its rigidbody, collider into the sets from Master
-    pub fn new(&self, pos: Point2<i32>, bodies: DefaultBodySet<f32>, colliders: DefaultColliderSet<f32>) -> Self{
+    pub fn new(&self, pos: Point2<i32>, bodies: DefaultBodySet<f32>, colliders: DefaultColliderSet<f32>, isPlayer: bool) -> Self{
             //create the necessary isntances for simulation
             let rigidBody = RigidBodyDesc::new().
                 mass(10.0).
@@ -34,12 +36,13 @@ impl GameObject {
             let collider = ColliderDesc::new(shape).
                 density(1.0).
                 build(
-                BodyParentHandle(self.rigidBody, 0));
+                BodyPartHandle(self.rigidBody, 0));
         let go = GameObject {
             //give handles to GameObject
             handleRigidBody: colliders.get_mut(bodies.insert(rigidBody)),   //insert into set, get handle, save mutable handle
             handleCollider: colliders.get_mut(colliders.insert(collider)),
-        };
+            isPlayer: isPlayer,
+        }; //return go
     }
 
     pub fn update(){
@@ -49,10 +52,7 @@ impl GameObject {
     pub fn draw(&mut self, context: Context){
 
         //these should later be changed to get the real values out of the player struct
-        let x_pos = handleRigidBody.position;
-        let y_pos = 200f32;
-        let radius = 30f32;
-        let tolerance = 0.00001f32;
+        let pos = self.handleRigidBody.position;
         //--
         let p: Point2<f32> =  Point2{
             x: x_pos,
