@@ -8,6 +8,7 @@ use crate::master::Master;
 mod game_object;
 mod master;
 mod player;
+mod lib;
 
 fn main() {
     // Make a Context.

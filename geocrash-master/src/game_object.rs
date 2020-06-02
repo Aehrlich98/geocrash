@@ -5,7 +5,7 @@ use ncollide2d::*;
 extern crate nalgebra as na;
 
 use na::{Vector2, Point2, Isometry2};
-use nphysics2d::object::{BodyStatus, RigidBodyDesc};
+use nphysics2d::object::{BodyStatus, RigidBodyDesc, Collider};
 use nphysics2d::math::{Velocity, Inertia};
 use nphysics2d::material::{MaterialHandle, BasicMaterial};
 use nphysics2d::object::{DefaultBodySet, DefaultColliderSet ,BodySet, ColliderSet, ColliderDesc};

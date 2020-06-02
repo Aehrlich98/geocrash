@@ -25,7 +25,7 @@ pub struct Master{
     mechanical_world: DefaultMechanicalWorld<f32>,    //N/M types are somehow not right??? Maybe give specific types???
     geometrical_world: DefaultGeometricalWorld<f32>,
 
-    bodies: mut DefaultBodySet<f32>,
+    bodies: DefaultBodySet<f32>,
     colliders: DefaultColliderSet<f32>,
     joint_constraints: DefaultJointConstraintSet<f32>,
     force_generators: DefaultForceGeneratorSet<f32>,
@@ -39,7 +39,7 @@ pub struct Master{
 impl Master{
     pub fn new(ctx: &mut Context) -> Self{
 
-        let master = Master{
+        let mut master = Master{
             mechanical_world: DefaultMechanicalWorld::new(Vector2::new(0.0, -9.81)),
             geometrical_world: DefaultGeometricalWorld::new(),
             bodies: DefaultBodySet::new(),
@@ -51,8 +51,10 @@ impl Master{
             player: Player::new(),
             count: 0,
         };
-        let handle = master.bodies.insert(master.player.createRigidBody());
-        master.player.setHandle(handle);
+
+        //init player
+        master.player.createRigidBody(&mut bodies);
+        master.player.createCollider(&mut bodies, &mut colliders);
         return master;
     }
 
