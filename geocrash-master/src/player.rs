@@ -2,7 +2,7 @@ use ggez::graphics::{DrawParam, BlendMode, Mesh};
 use ggez::{graphics, Context, ContextBuilder, GameResult};
 use ggez::event::{self, EventHandler};
 use ggez::mint::Point2;
-use nphysics2d::object::{RigidBodyDesc, BodyStatus, RigidBody, Collider, ColliderDesc, DefaultBodyHandle, DefaultBodySet, DefaultColliderSet, DefaultColliderHandle};
+use nphysics2d::object::{RigidBodyDesc, BodyStatus, RigidBody, Collider, ColliderDesc, DefaultBodyHandle, DefaultBodySet, DefaultColliderSet, DefaultColliderHandle, BodyPartHandle};
 use nalgebra::{Isometry2, Vector2};
 use rand::prelude::*;
 use std::f32::consts::PI;
@@ -48,7 +48,7 @@ impl Player {
 
         let position = Isometry2::new(Vector2::new(x_pos, y_pos), PI);
 
-        let rigid_body= RigidBodyDesc::new()
+        let mut rigid_body= RigidBodyDesc::new()
             .rotation(5.0)
             .position(position)
             .gravity_enabled(false)
@@ -56,28 +56,26 @@ impl Player {
             .max_linear_velocity(10.0)
             .mass(5.0)
             .build();
+        rigid_body.disable_all_rotations();
         let handle = bodies.insert(rigid_body);
         self.rigid_body_handle = Some(handle);
 
     }
 
-    pub fn createCollider(&mut self, bodies: &mut DefaultBodySet<f32>, colliders: &mut DefaultColliderSet<f32>){
+    pub fn create_collider(&mut self, colliders: &mut DefaultColliderSet<f32>){
 
-        let handle = self.rigid_body_handle?;
-
-        //retrieve position from RigidBody
-        let position =  bodies.get_mut(handle).get_position();
+        //TODO: find better exception handling
+        let handle = self.rigid_body_handle.unwrap();
 
         let shape = ShapeHandle::new(Ball::new(1.5));
         let collider = ColliderDesc::new(shape)
-            .position(position)
             .density(1.5)
             .material(MaterialHandle::new(BasicMaterial::new(0.3, 0.5)))
             .margin(0.02)
-            .id(1791)
-            .build(handle);
-        let handle = colliders.insert(collider);
-        self.collider_handle = Some(handle);
+            .user_data(1791) //id
+            .build(BodyPartHandle(handle, 0));
+        let collider_handle = colliders.insert(collider);
+        self.collider_handle = Some(collider_handle);
     }
 
     pub fn update() {

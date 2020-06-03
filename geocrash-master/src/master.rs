@@ -25,13 +25,13 @@ pub struct Master{
     mechanical_world: DefaultMechanicalWorld<f32>,    //N/M types are somehow not right??? Maybe give specific types???
     geometrical_world: DefaultGeometricalWorld<f32>,
 
-    bodies: DefaultBodySet<f32>,
-    colliders: DefaultColliderSet<f32>,
+    pub bodies: DefaultBodySet<f32>,
+    pub colliders: DefaultColliderSet<f32>,
     joint_constraints: DefaultJointConstraintSet<f32>,
     force_generators: DefaultForceGeneratorSet<f32>,
 
-    gameObjList: Vec<GameObject>,   //list of all objects in game
-    player: Player,
+    pub gameObjList: Vec<GameObject>,   //list of all objects in game
+    pub player: Player,
     count: i32,                     //test vraible to only the game run a fixed amount of ticks.
 }
 //TODO: implement structs Player and Enemy
@@ -53,15 +53,22 @@ impl Master{
         };
 
         //init player
-        master.player.createRigidBody(&mut bodies);
-        master.player.createCollider(&mut bodies, &mut colliders);
+        master.player.createRigidBody(&mut master.bodies);
+        master.player.create_collider(&mut master.colliders);
         return master;
     }
 
-    pub fn update(){
-        //TODO: update all Players, Enemies and moving objects
-        //TODO: remove objects that are out of screen and spawn new ones
-    }
+    /*pub fn update(&mut self){
+        //handle_input_events();
+        self.mechanical_world.step(
+            &mut self.geometrical_world,
+            &mut self.bodies,
+            &mut self.colliders,
+            &mut self. joint_constraints,
+            &mut self.force_generators
+        );
+        //handle_physics_events();
+    }*/
 
     pub fn draw(&self, context: &mut Context) -> GameResult<i8>{
         self.player.draw(context);
@@ -91,6 +98,7 @@ impl EventHandler for Master {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, graphics::WHITE);
+        self.player.draw(ctx);
         graphics::present(ctx)
     }
 }

@@ -10,7 +10,7 @@ mod master;
 mod player;
 mod lib;
 
-static gameSize: Int = 600;
+static gameSize: i32 = 600;
 
 fn main() {
     // Make a Context.
@@ -25,12 +25,22 @@ fn main() {
     //TODO spawn player(s)
     //spawn other GameObjects
     let pos = (0, 0);
-    while my_game.gameObjList.length < 1{ //place GameObjects, until max number of allowed Object is reached.
-        my_game.gameObjList.push(GameObject::new(pos, my_game.bodies, my_game.colliders));
+    while my_game.gameObjList.len() < 1{ //place GameObjects, until max number of allowed Object is reached.
+        my_game.gameObjList.push(GameObject::new(&mut my_game.bodies, &mut my_game.colliders));
         //TODO place at random positions, check that no two objects are placed "into" each other
        // pos.x() + 10;
         //pos.y() + 10;
     }
+
+    /*
+    loop {
+        my_game.update();
+        my_game.draw(&mut ctx);
+    }
+*/
+
+    //--------------------------------------
+    //ggez loop. MUST NOT BE USED UNLESS GGEZ IS USED FOR FRONTEND
 
     // Run!
     match event::run(&mut ctx, &mut event_loop, &mut my_game) {

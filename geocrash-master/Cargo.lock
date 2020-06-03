@@ -585,6 +585,7 @@ dependencies = [
  "nalgebra 0.20.0",
  "ncollide2d",
  "nphysics2d",
+ "rand 0.7.3",
 ]
 
 [[package]]
