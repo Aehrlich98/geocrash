@@ -11,6 +11,7 @@ use ncollide2d::shape::{ShapeHandle, Ball};
 use ggez::nalgebra::{UnitComplex, Isometry};
 use nphysics2d::material::{MaterialHandle, BasicMaterial};
 use std::ops::Index;
+use ggez::conf::Conf;
 use std::borrow::Borrow;
 
 
@@ -33,8 +34,9 @@ impl Player {
         }
     }
 
-    pub fn createRigidBody(&mut self, bodies: &mut DefaultBodySet<f32>){
+    pub fn createRigidBody(&mut self, context: &mut Context, bodies: &mut DefaultBodySet<f32>){
 
+        //TODO: use context object to make bounds fitted to window
         let left_bound = 0.0;
         let right_bound = 350.0;
         let top_bounds = 0.0;
@@ -89,11 +91,13 @@ impl Player {
         let rb_handle = self.rigid_body_handle.unwrap();
         let rb = bodies.rigid_body(rb_handle).unwrap();
 
-        //these should later be changed to get the real values out of the player struct
         let position: &Isometry2<f32> = rb.position();
         let x :f32 = position.translation.vector.get(0).unwrap().clone();
         let y :f32 = position.translation.vector.get(1).unwrap().clone();
+
+        //TODO: get real radius
         let radius = 30f32;
+
         let tolerance = 0.00001f32;
         //--
         let p: Point2<f32> =  Point2{

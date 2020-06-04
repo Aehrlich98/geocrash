@@ -53,7 +53,7 @@ impl Master{
         };
 
         //init player
-        master.player.createRigidBody(&mut master.bodies);
+        master.player.createRigidBody(&mut ctx, &mut master.bodies);
         master.player.create_collider(&mut master.colliders);
         return master;
     }
