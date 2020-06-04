@@ -11,6 +11,7 @@ use ncollide2d::shape::{ShapeHandle, Ball};
 use ggez::nalgebra::{UnitComplex, Isometry};
 use nphysics2d::material::{MaterialHandle, BasicMaterial};
 use std::ops::Index;
+use std::borrow::Borrow;
 
 
 pub struct Player{
@@ -82,11 +83,13 @@ impl Player {
         //TODO: update player
     }
 
-    pub fn draw(&self, context: &mut Context) -> GameResult<i8>{
+    pub fn draw(&self, context: &mut Context, bodies: &mut DefaultBodySet<f32>) -> GameResult<i8>{
 
+        let rb = bodies.rigid_body(self.rigid_body_handle?).unwrap();
         //these should later be changed to get the real values out of the player struct
         let x_pos = 200f32;
         let y_pos = 200f32;
+        let position = rb.position();
         let radius = 30f32;
         let tolerance = 0.00001f32;
         //--
@@ -95,7 +98,7 @@ impl Player {
             y: y_pos,
         };
 
-        let r2 = graphics::Mesh::new_circle(context, graphics::DrawMode::fill(), p,
+        let r2 = graphics::Mesh::new_circle(context, graphics::DrawMode::fill(), position,
             radius, tolerance, graphics::Color::new(0.7, 0.4, 0.9, 0.8))?;
         graphics::draw(context, &r2, DrawParam::default())?;
         Ok(0)
