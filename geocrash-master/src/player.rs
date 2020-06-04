@@ -35,16 +35,17 @@ impl Player {
 
     pub fn createRigidBody(&mut self, bodies: &mut DefaultBodySet<f32>){
 
-        let left_bound = -50.0;
-        let right_bound = 50.0;
+        let left_bound = 0.0;
+        let right_bound = 350.0;
         let top_bounds = 0.0;
-        let bottom_bounds = 50.0;
+        let bottom_bounds = 250.0;
 
         //should players get an id?? Could be helpful
         let id = 1791;
 
         let mut rng = rand::thread_rng();
         let x_pos = rng.gen_range(left_bound, right_bound);
+        println!("x_pos: {}", x_pos);
         let y_pos = rng.gen_range(top_bounds, bottom_bounds);
 
         let position = Isometry2::new(Vector2::new(x_pos, y_pos), PI);
@@ -85,20 +86,22 @@ impl Player {
 
     pub fn draw(&self, context: &mut Context, bodies: &mut DefaultBodySet<f32>) -> GameResult<i8>{
 
-        let rb = bodies.rigid_body(self.rigid_body_handle?).unwrap();
+        let rb_handle = self.rigid_body_handle.unwrap();
+        let rb = bodies.rigid_body(rb_handle).unwrap();
+
         //these should later be changed to get the real values out of the player struct
-        let x_pos = 200f32;
-        let y_pos = 200f32;
-        let position = rb.position();
+        let position: &Isometry2<f32> = rb.position();
+        let x :f32 = position.translation.vector.get(0).unwrap().clone();
+        let y :f32 = position.translation.vector.get(1).unwrap().clone();
         let radius = 30f32;
         let tolerance = 0.00001f32;
         //--
         let p: Point2<f32> =  Point2{
-            x: x_pos,
-            y: y_pos,
+            x,
+            y,
         };
 
-        let r2 = graphics::Mesh::new_circle(context, graphics::DrawMode::fill(), position,
+        let r2 = graphics::Mesh::new_circle(context, graphics::DrawMode::fill(), p,
             radius, tolerance, graphics::Color::new(0.7, 0.4, 0.9, 0.8))?;
         graphics::draw(context, &r2, DrawParam::default())?;
         Ok(0)
