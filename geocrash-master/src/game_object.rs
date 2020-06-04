@@ -25,21 +25,24 @@ pub struct GameObject {
 
 impl GameObject {
     //create GameObject, add its rigidbody, collider into the sets from Master
-    pub fn new(&self, pos: Point2<i32>, bodies: DefaultBodySet<f32>, colliders: DefaultColliderSet<f32>) -> Self{
+    pub fn new(&self, pos: Point2<i32>, &mut bodies: DefaultBodySet<f32>, &mut colliders: DefaultColliderSet<f32>) -> Self{
             //create the necessary isntances for simulation
             let rigidBody = RigidBodyDesc::new().
                 mass(10.0).
                 build();
-            let shape = ShapeHandle::new(Cuboid::new(
+        let rb_handle = bodies.insert(rigidBody);
+
+        let shape = ShapeHandle::new(Cuboid::new(
                 Vector2::new(5.0f32, 5.0)));
-            let collider = ColliderDesc::new(shape).
-                density(1.0).
-                build(
-                BodyPartHandle(self.rigidBody, 0));
+        let collider = ColliderDesc::new(shape).
+            density(1.0).
+            build(BodyPartHandle(rb_handle, 0));
+        let col_handle = colliders.insert(collider);
+
         let go = GameObject {
             //give handles to GameObject
-            handleRigidBody: colliders.get_mut(bodies.insert(rigidBody)),   //insert into set, get handle, save mutable handle
-            handleCollider: colliders.get_mut(colliders.insert(collider)),
+            handleRigidBody: rb_handle,   //insert into set, get handle, save mutable handle
+            handleCollider: col_handle,
         };
     }
 
