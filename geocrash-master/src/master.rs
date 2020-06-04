@@ -70,8 +70,8 @@ impl Master{
         //handle_physics_events();
     }*/
 
-    pub fn draw(&self, context: &mut Context) -> GameResult<i8>{
-        self.player.draw(context);
+    pub fn draw(&mut self, context: &mut Context) -> GameResult<i8>{
+        self.player.draw(context, &mut self.bodies);
         return Ok(0)
     }
 }
@@ -98,7 +98,7 @@ impl EventHandler for Master {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, graphics::WHITE);
-        self.player.draw(ctx);
+        self.player.draw(ctx, &mut self.bodies);
         graphics::present(ctx)
     }
 }
