@@ -34,7 +34,7 @@ impl Player {
         }
     }
 
-    pub fn createRigidBody(&mut self, context: &mut Context, bodies: &mut DefaultBodySet<f32>){
+    pub fn createRigidBody(&mut self, bodies: &mut DefaultBodySet<f32>){
 
         //TODO: use context object to make bounds fitted to window
         let left_bound = 0.0;

@@ -19,7 +19,7 @@ fn main() {
         .expect("aieee, could not create ggez context!");
 
     // Create an instance of your event handler.
-    let mut my_game = Master::new(&mut ctx);//.unwrap();
+    let mut my_game = Master::new(&mut ctx);
 
     //spawn starting objects:
     //TODO spawn player(s)

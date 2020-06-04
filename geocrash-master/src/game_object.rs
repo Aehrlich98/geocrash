@@ -4,7 +4,7 @@ use ncollide2d::*;
 
 extern crate nalgebra as na;
 
-use na::{Vector2, Point2, Isometry2};
+use na::{Vector2, Isometry2};
 use nphysics2d::object::{BodyStatus, RigidBodyDesc, Collider, DefaultBodyHandle};
 use nphysics2d::math::{Velocity, Inertia};
 use nphysics2d::material::{MaterialHandle, BasicMaterial};
@@ -14,7 +14,7 @@ use nphysics2d::joint::{DefaultJointConstraintSet, JointConstraintSet};
 use nphysics2d::world::{DefaultMechanicalWorld, DefaultGeometricalWorld};
 use ncollide2d::shape::{ShapeHandle, Cuboid};
 use ggez::graphics::DrawParam;
-
+use ggez::mint::Point2;
 //OUT type Point = (i32, i32);
 
 pub struct GameObject {
@@ -52,24 +52,26 @@ impl GameObject {
 
     }
 
-    pub fn draw(&mut self, context: Context){
-/*
-        //these should later be changed to get the real values out of the player struct
-        let x_pos = handleRigidBody.position;
-        let y_pos = 200f32;
-        let radius = 30f32;
+    pub fn draw(&self, context: &mut Context, bodies: &mut DefaultBodySet<f32>) -> GameResult<i8>{
+        let rb_handle = self.handleRigidBody.unwrap();
+        let rb = bodies.rigid_body(rb_handle).unwrap();
+
+        let position: &Isometry2<f32> = rb.position();
+        let x :f32 = position.translation.vector.get(0).unwrap().clone();
+        let y :f32 = position.translation.vector.get(1).unwrap().clone();
+
+        let radius = 10f32;
         let tolerance = 0.00001f32;
         //--
         let p: Point2<f32> =  Point2{
-            x: x_pos,
-            y: y_pos,
+            x,
+            y,
         };
 
         let r2 = graphics::Mesh::new_circle(context, graphics::DrawMode::fill(), p,
             radius, tolerance, graphics::Color::new(0.7, 0.4, 0.9, 0.8))?;
         graphics::draw(context, &r2, DrawParam::default())?;
         Ok(0)
-    */
     }
 
 }

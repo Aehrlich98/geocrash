@@ -53,7 +53,7 @@ impl Master{
         };
 
         //init player
-        master.player.createRigidBody(&mut ctx, &mut master.bodies);
+        master.player.createRigidBody( &mut master.bodies);
         master.player.create_collider(&mut master.colliders);
         return master;
     }
@@ -99,6 +99,9 @@ impl EventHandler for Master {
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, graphics::WHITE);
         self.player.draw(ctx, &mut self.bodies);
+        for go in &self.gameObjList{
+            go.draw(&mut ctx, &mut self.bodies);
+        }
         graphics::present(ctx)
     }
 }
