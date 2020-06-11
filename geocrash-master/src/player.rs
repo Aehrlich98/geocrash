@@ -62,7 +62,7 @@ impl Player {
             .position(position)
             .gravity_enabled(true)
             .status(BodyStatus::Dynamic)
-            .max_linear_velocity(10.0)
+            .max_linear_velocity(100.0)
             .mass(1.0)
             .build();
         rigid_body.disable_all_rotations();
