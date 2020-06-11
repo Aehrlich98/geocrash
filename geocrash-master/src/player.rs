@@ -1,6 +1,6 @@
 use ggez::graphics::{DrawParam, BlendMode, Mesh};
-use ggez::{graphics, Context, ContextBuilder, GameResult};
-use ggez::event::{self, EventHandler};
+use ggez::{graphics, ContextBuilder, GameResult, Context};
+use ggez::event::{self, EventHandler, KeyCode};
 use ggez::mint::Point2;
 use nphysics2d::object::{RigidBodyDesc, BodyStatus, RigidBody, Collider, ColliderDesc, DefaultBodyHandle, DefaultBodySet, DefaultColliderSet, DefaultColliderHandle, BodyPartHandle};
 use nalgebra::{Isometry2, Vector2};
@@ -12,7 +12,12 @@ use ggez::nalgebra::{UnitComplex, Isometry};
 use nphysics2d::material::{MaterialHandle, BasicMaterial};
 use std::ops::Index;
 use ggez::conf::Conf;
-use std::borrow::Borrow;
+use std::borrow::{Borrow, BorrowMut};
+use ggez::input::keyboard::KeyboardContext;
+use ggez::input::keyboard;
+use nphysics2d::algebra::ForceType::Force;
+use nphysics2d::algebra::{ForceType, Force2};
+use nphysics2d::force_generator::{ConstantAcceleration, DefaultForceGeneratorSet};
 
 
 pub struct Player{
@@ -55,10 +60,10 @@ impl Player {
         let mut rigid_body= RigidBodyDesc::new()
             .rotation(5.0)
             .position(position)
-            .gravity_enabled(false)
-            .status(BodyStatus::Kinematic)
+            .gravity_enabled(true)
+            .status(BodyStatus::Dynamic)
             .max_linear_velocity(10.0)
-            .mass(5.0)
+            .mass(1.0)
             .build();
         rigid_body.disable_all_rotations();
         let handle = bodies.insert(rigid_body);
@@ -82,8 +87,18 @@ impl Player {
         self.collider_handle = Some(collider_handle);
     }
 
-    pub fn update() {
+    pub fn update(&mut self,  context: &mut Context, bodies: &mut DefaultBodySet<f32>, force_generators: &mut DefaultForceGeneratorSet<f32>) {
         //TODO: update player
+
+        if keyboard::is_key_pressed(context, KeyCode::Left) {
+            let player_body = bodies.get_mut(self.rigid_body_handle.unwrap()).unwrap();
+
+            println!("{}",player_body.part(0).unwrap().center_of_mass());
+
+            let mut left_acc = ConstantAcceleration::new(Vector2::new(-50.0, 10.0), 0.0);
+            left_acc.add_body_part(BodyPartHandle(self.rigid_body_handle.unwrap(), 0));
+            force_generators.insert(Box::new(left_acc));
+        }
     }
 
     pub fn draw(&self, context: &mut Context, bodies: &mut DefaultBodySet<f32>) -> GameResult<i8>{

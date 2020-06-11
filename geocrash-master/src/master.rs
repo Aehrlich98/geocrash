@@ -55,20 +55,12 @@ impl Master{
         //init player
         master.player.createRigidBody( &mut master.bodies);
         master.player.create_collider(&mut master.colliders);
+
+        //init ForceGenerators
+
         return master;
     }
 
-    /*pub fn update(&mut self){
-        //handle_input_events();
-        self.mechanical_world.step(
-            &mut self.geometrical_world,
-            &mut self.bodies,
-            &mut self.colliders,
-            &mut self. joint_constraints,
-            &mut self.force_generators
-        );
-        //handle_physics_events();
-    }*/
 
     pub fn draw(&mut self, context: &mut Context) -> GameResult<i8>{
         self.player.draw(context, &mut self.bodies);
@@ -80,6 +72,8 @@ impl Master{
 //EventHandler handling events...
 impl EventHandler for Master {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
+        self.player.update(_ctx, &mut self.bodies, &mut self.force_generators);
+
         self.mechanical_world.step(     //move the simulation further one step
             &mut self.geometrical_world,
             &mut self.bodies,
@@ -89,7 +83,7 @@ impl EventHandler for Master {
         );
 
         //temporary
-        println!("Count: {}", self.count);
+        //println!("Count: {}", self.count);
         if self.count+1 == 10 {
             event::quit(_ctx);  //End game
         }
@@ -99,9 +93,10 @@ impl EventHandler for Master {
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, graphics::WHITE);
         self.player.draw(ctx, &mut self.bodies);
-        for go in &self.gameObjList{
-            go.draw(&mut ctx, &mut self.bodies);
-        }
+
+        /*for go in &self.gameObjList{
+            go.draw(ctx, &mut self.bodies);
+        }*/
         graphics::present(ctx)
     }
 }
