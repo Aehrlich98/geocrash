@@ -60,7 +60,7 @@ impl Player {
         let mut rigid_body= RigidBodyDesc::new()
             .rotation(5.0)
             .position(position)
-            .gravity_enabled(true)
+            .gravity_enabled(false)
             .status(BodyStatus::Dynamic)
             .max_linear_velocity(100.0)
             .mass(1.0)
