@@ -36,11 +36,7 @@ pub struct Master{
     pub player: Player,
     count: i32,                     //test vraible to only the game run a fixed amount of ticks.
 
-    //control accelerations - are applied to the player, when a certain key is pressed (for example
-    //left arrow key for left_acc
-
 }
-//TODO: implement structs Player and Enemy
 
 impl Master{
     pub fn new(ctx: &mut Context) -> Self{
@@ -79,7 +75,6 @@ impl EventHandler for Master {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
         self.player.update(_ctx, &mut self.bodies, &mut self.force_generators);
 
-
         self.mechanical_world.step(     //move the simulation further one step
             &mut self.geometrical_world,
             &mut self.bodies,
@@ -96,12 +91,13 @@ impl EventHandler for Master {
             let id1 = data1.downcast_ref::<i8>().unwrap();
             let id2 = data2.downcast_ref::<i8>().unwrap();
             if *id1 == PLAYER_ID && *id2 == GAME_OBJECT_ID || *id1 == GAME_OBJECT_ID && *id2 == PLAYER_ID{
+                //TODO: apply a one time force to the gameobject pulling it towards the center of the player
                 println!("Player is close to a game object");
             }
         }
 
         for contact in self.geometrical_world.contact_events(){
-
+            println!("Contact happened");
         }
 
 
