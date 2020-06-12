@@ -25,7 +25,7 @@ fn main() {
     //TODO spawn player(s)
     //spawn other GameObjects
     let pos = (0, 0);
-    while my_game.gameObjList.len() < 1{ //place GameObjects, until max number of allowed Object is reached.
+    while my_game.gameObjList.len() < 10{ //place GameObjects, until max number of allowed Object is reached.
         my_game.gameObjList.push(GameObject::new(&mut my_game.bodies, &mut my_game.colliders));
         //TODO place at random positions, check that no two objects are placed "into" each other
        // pos.x() + 10;

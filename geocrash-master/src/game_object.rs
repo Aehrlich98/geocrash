@@ -5,7 +5,7 @@ use ncollide2d::*;
 extern crate nalgebra as na;
 
 use na::{Vector2, Isometry2};
-use nphysics2d::object::{BodyStatus, RigidBodyDesc, Collider, DefaultBodyHandle};
+use nphysics2d::object::{BodyStatus, RigidBodyDesc, Collider, DefaultBodyHandle, Body};
 use nphysics2d::math::{Velocity, Inertia};
 use nphysics2d::material::{MaterialHandle, BasicMaterial};
 use nphysics2d::object::{DefaultBodySet, DefaultColliderSet ,BodySet, ColliderSet, ColliderDesc, BodyPartHandle};
@@ -17,6 +17,8 @@ use ggez::graphics::{DrawParam, Color};
 use ggez::mint::Point2;
 use rand::Rng;
 use std::f32::consts::PI;
+use ggez::conf::Conf;
+use crate::master;
 //OUT type Point = (i32, i32);
 
 pub struct GameObject {
@@ -31,9 +33,9 @@ impl GameObject {
 
         //TODO: use context object to make bounds fitted to window
         let left_bound = 0.0;
-        let right_bound = 350.0;
+        let right_bound = 800.0;
         let top_bounds = 0.0;
-        let bottom_bounds = 250.0;
+        let bottom_bounds = 600.0;
 
         let mut rng = rand::thread_rng();
         let x_pos = rng.gen_range(left_bound, right_bound);
@@ -42,10 +44,13 @@ impl GameObject {
 
         let position = Isometry2::new(Vector2::new(x_pos, y_pos), PI);
             //create the necessary isntances for simulation
-            let rigidBody = RigidBodyDesc::new()
-                .mass(10.0)
-                .position(position)
-                .build();
+        let mut rigidBody = RigidBodyDesc::new()
+            .mass(10.0)
+            .position(position)
+            .enable_gravity(false)
+            .build();
+        rigidBody.set_status(BodyStatus::Dynamic);
+        rigidBody.set_user_data(Some(Box::new(master::GAME_OBJECT_ID)));
         let rb_handle = bodies.insert(rigidBody);
 
         //let shape = ShapeHandle::new(Cuboid::new(
@@ -54,7 +59,8 @@ impl GameObject {
         let collider = ColliderDesc::new(shape)
             .density(1.0)
             .material(MaterialHandle::new(BasicMaterial::new(0.4, 0.6)))
-            .margin(0.02)
+            .margin(8f32)
+            .user_data(master::GAME_OBJECT_ID)
             .build(BodyPartHandle(rb_handle, 0));
         let col_handle = colliders.insert(collider);
 
@@ -89,7 +95,7 @@ impl GameObject {
         };
 
         let r2 = graphics::Mesh::new_circle(context, graphics::DrawMode::fill(), p,
-            radius, tolerance, graphics::Color::new(1.0, 1.0, 1.0, 0.90))?;
+            radius, tolerance, graphics::Color::new(0.0, 1.0, 1.0, 0.90))?;
         graphics::draw(context, &r2, DrawParam::default())?;
         Ok(0)
     }

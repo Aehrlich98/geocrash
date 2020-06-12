@@ -20,6 +20,8 @@ use nphysics2d::joint::{DefaultJointConstraintSet, JointConstraintSet};
 use nphysics2d::world::{DefaultMechanicalWorld, DefaultGeometricalWorld};
 use ncollide2d::pipeline::CollisionWorld;
 
+pub const PLAYER_ID: i8 = 1;
+pub const GAME_OBJECT_ID: i8 = 2;
 
 pub struct Master{
     mechanical_world: DefaultMechanicalWorld<f32>,    //N/M types are somehow not right??? Maybe give specific types???
@@ -42,7 +44,6 @@ pub struct Master{
 
 impl Master{
     pub fn new(ctx: &mut Context) -> Self{
-
 
         let mut force_generators = DefaultForceGeneratorSet::new();
 
@@ -70,11 +71,6 @@ impl Master{
         return master;
     }
 
-
-    pub fn draw(&mut self, context: &mut Context) -> GameResult<i8>{
-        self.player.draw(context, &mut self.bodies);
-        return Ok(0)
-    }
 }
 
 
@@ -82,6 +78,7 @@ impl Master{
 impl EventHandler for Master {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
         self.player.update(_ctx, &mut self.bodies, &mut self.force_generators);
+
 
         self.mechanical_world.step(     //move the simulation further one step
             &mut self.geometrical_world,
@@ -91,8 +88,24 @@ impl EventHandler for Master {
             &mut self.force_generators
         );
 
-        //temporary
-        //println!("Count: {}", self.count);
+        for proximity in self.geometrical_world.proximity_events(){
+            //handle proximity events
+            println!("Proximity detected");
+            let data1 = self.colliders.get(proximity.collider1).unwrap().user_data().unwrap();
+            let data2= self.colliders.get(proximity.collider2).unwrap().user_data().unwrap();
+            let id1 = data1.downcast_ref::<i8>().unwrap();
+            let id2 = data2.downcast_ref::<i8>().unwrap();
+            if *id1 == PLAYER_ID && *id2 == GAME_OBJECT_ID || *id1 == GAME_OBJECT_ID && *id2 == PLAYER_ID{
+                println!("Player is close to a game object");
+            }
+        }
+
+        for contact in self.geometrical_world.contact_events(){
+
+        }
+
+
+
         if self.count+1 == 10 {
             event::quit(_ctx);  //End game
         }
@@ -103,9 +116,9 @@ impl EventHandler for Master {
         graphics::clear(ctx, graphics::WHITE);
         self.player.draw(ctx, &mut self.bodies);
 
-        /*for go in &self.gameObjList{
+        for go in &self.gameObjList{
             go.draw(ctx, &mut self.bodies);
-        }*/
+        }
         graphics::present(ctx)
     }
 }

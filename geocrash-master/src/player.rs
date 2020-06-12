@@ -19,6 +19,7 @@ use nphysics2d::algebra::ForceType::Force;
 use nphysics2d::algebra::{ForceType, Force2};
 use nphysics2d::force_generator::{ConstantAcceleration, DefaultForceGeneratorSet, DefaultForceGeneratorHandle};
 use std::collections::HashMap;
+use crate::master;
 
 const LEFT: i8 = 0;
 const RIGHT: i8 = 1;
@@ -51,12 +52,9 @@ impl Player {
 
         //TODO: use context object to make bounds fitted to window
         let left_bound = 0.0;
-        let right_bound = 350.0;
+        let right_bound = 800.0;
         let top_bounds = 0.0;
-        let bottom_bounds = 250.0;
-
-        //should players get an id?? Could be helpful
-        let id = 1791;
+        let bottom_bounds = 600.0;
 
         let mut rng = rand::thread_rng();
         let x_pos = rng.gen_range(left_bound, right_bound);
@@ -66,13 +64,13 @@ impl Player {
         let position = Isometry2::new(Vector2::new(x_pos, y_pos), PI);
 
         let mut rigid_body= RigidBodyDesc::new()
-            .rotation(5.0)
             .position(position)
             .gravity_enabled(false)
             .status(BodyStatus::Dynamic)
             .max_linear_velocity(100.0)
             .mass(1.0)
             .linear_damping(1.0)
+            .user_data(master::PLAYER_ID)
             .build();
         rigid_body.disable_all_rotations();
         let handle = bodies.insert(rigid_body);
@@ -89,8 +87,8 @@ impl Player {
         let collider = ColliderDesc::new(shape)
             .density(1.5)
             .material(MaterialHandle::new(BasicMaterial::new(0.3, 0.5)))
-            .margin(0.02)
-            .user_data(1791) //id
+            .margin(35.00)
+            .user_data(master::PLAYER_ID) //id
             .build(BodyPartHandle(handle, 0));
         let collider_handle = colliders.insert(collider);
         self.collider_handle = Some(collider_handle);
