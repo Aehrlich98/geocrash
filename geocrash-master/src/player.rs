@@ -35,7 +35,7 @@ pub struct Player{
 }
 
 impl Player {
-    pub fn new(left_handle: DefaultForceGeneratorHandle, right_handle: DefaultForceGeneratorHandle, up_handle: DefaultForceGeneratorHandle, down_handle: DefaultForceGeneratorHandle) -> Self {
+    pub fn new() -> Self {
 
         //TODO: create a new player in the center of the screen
         let mut p = Player {
@@ -44,10 +44,6 @@ impl Player {
             collider_handle: None,
             acc_handles: HashMap::with_capacity(4),
         };
-        p.acc_handles.insert(LEFT, left_handle);
-        p.acc_handles.insert(RIGHT, right_handle);
-        p.acc_handles.insert(UP, up_handle);
-        p.acc_handles.insert(DOWN, down_handle);
         return p;
     }
 
@@ -76,6 +72,7 @@ impl Player {
             .status(BodyStatus::Dynamic)
             .max_linear_velocity(100.0)
             .mass(1.0)
+            .linear_damping(1.0)
             .build();
         rigid_body.disable_all_rotations();
         let handle = bodies.insert(rigid_body);
@@ -102,15 +99,58 @@ impl Player {
     pub fn update(&mut self,  context: &mut Context, bodies: &mut DefaultBodySet<f32>, force_generators: &mut DefaultForceGeneratorSet<f32>) {
         //TODO: update player
 
+
         if keyboard::is_key_pressed(context, KeyCode::Left) {
-            let player_body = bodies.get_mut(self.rigid_body_handle.unwrap()).unwrap();
+            if !self.acc_handles.contains_key(&LEFT){
+                let mut left_acc= ConstantAcceleration::new(Vector2::new(-70.0f32, 0.0), 0.0);
+                left_acc.add_body_part(BodyPartHandle(self.rigid_body_handle.unwrap(), 0));
+                let left_handle = force_generators.insert(Box::new(left_acc));
+                self.acc_handles.insert(LEFT, left_handle);
+            }
 
-            println!("{}",player_body.part(0).unwrap().center_of_mass());
+        } else {
+            if let Some(h) = self.acc_handles.remove(&LEFT){
+                force_generators.remove(h);
+            }
+        }
+        if keyboard::is_key_pressed(context, KeyCode::Right) {
+            if !self.acc_handles.contains_key(&RIGHT){
+                let mut right_acc= ConstantAcceleration::new(Vector2::new(70.0f32, 0.0), 0.0);
+                right_acc.add_body_part(BodyPartHandle(self.rigid_body_handle.unwrap(), 0));
+                let right_handle = force_generators.insert(Box::new(right_acc));
+                self.acc_handles.insert(RIGHT, right_handle);
+            }
 
-            //let mut l = force_generators.get(self.acc_handles.get(&LEFT).unwrap().clone());
-            let mut left = force_generators.get(self.acc_handles.get(&LEFT).unwrap().clone()).unwrap();
-            //let left = force_generators.get_mut(self.acc_handles.get(&LEFT).unwrap().clone()).unwrap();            )
-                add_body_part(BodyPartHandle(self.rigid_body_handle.unwrap(), 0));
+        } else {
+            if let Some(h) = self.acc_handles.remove(&RIGHT){
+                force_generators.remove(h);
+            }
+        }
+        if keyboard::is_key_pressed(context, KeyCode::Up) {
+            if !self.acc_handles.contains_key(&UP){
+                let mut up_acc= ConstantAcceleration::new(Vector2::new(0.0, -70.0f32), 0.0);
+                up_acc.add_body_part(BodyPartHandle(self.rigid_body_handle.unwrap(), 0));
+                let up_handle = force_generators.insert(Box::new(up_acc));
+                self.acc_handles.insert(UP, up_handle);
+            }
+
+        } else {
+            if let Some(h) = self.acc_handles.remove(&UP){
+                force_generators.remove(h);
+            }
+        }
+        if keyboard::is_key_pressed(context, KeyCode::Down) {
+            if !self.acc_handles.contains_key(&DOWN){
+                let mut down_acc= ConstantAcceleration::new(Vector2::new(0.0, 70.0f32), 0.0);
+                down_acc.add_body_part(BodyPartHandle(self.rigid_body_handle.unwrap(), 0));
+                let down_handle = force_generators.insert(Box::new(down_acc));
+                self.acc_handles.insert(DOWN, down_handle);
+            }
+
+        } else {
+            if let Some(h) = self.acc_handles.remove(&DOWN){
+                force_generators.remove(h);
+            }
         }
     }
 

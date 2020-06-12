@@ -48,23 +48,9 @@ impl Master{
 
         let mut bodies = DefaultBodySet::new();
         let mut colliders = DefaultColliderSet::new();
-        //these forceGenerators are used to apply a force to the player when the control keys are pressed
-        //to move the player
-        //the handles are passed to the player, since the player is the only object that needs them
-
-        //init ForceGenerators
-        let mut left_acc= ConstantAcceleration::new(Vector2::new(-50.0f32, 0.0), 0.0);
-        let mut right_acc = ConstantAcceleration::new(Vector2::new(50.0f32, 0.0), 0.0);
-        let mut up_acc = ConstantAcceleration::new(Vector2::new(0.0f32, 50.0f32), 0.0);
-        let mut down_acc = ConstantAcceleration::new(Vector2::new(-50.0f32, -50.0f32), 0.0);
-        //add ForceGenerators to set of forceGenerators; keep handles to pass to player
-        let left_handle: DefaultForceGeneratorHandle = force_generators.insert(Box::new(left_acc));
-        let right_handle = force_generators.insert(Box::new(right_acc));
-        let up_handle = force_generators.insert(Box::new(up_acc));
-        let down_handle = force_generators.insert(Box::new(down_acc));
 
 
-        let mut player = Player::new(left_handle, right_handle, up_handle, down_handle);
+        let mut player = Player::new();
         //init player
         player.createRigidBody( &mut bodies);
         player.create_collider(&mut colliders);
