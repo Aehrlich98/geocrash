@@ -10,15 +10,20 @@ use std::alloc::handle_alloc_error;
 use ncollide2d::shape::{ShapeHandle, Ball};
 use ggez::nalgebra::{UnitComplex, Isometry};
 use nphysics2d::material::{MaterialHandle, BasicMaterial};
-use std::ops::Index;
+use std::ops::{Index, Deref, DerefMut};
 use ggez::conf::Conf;
 use std::borrow::{Borrow, BorrowMut};
 use ggez::input::keyboard::KeyboardContext;
 use ggez::input::keyboard;
 use nphysics2d::algebra::ForceType::Force;
 use nphysics2d::algebra::{ForceType, Force2};
-use nphysics2d::force_generator::{ConstantAcceleration, DefaultForceGeneratorSet};
+use nphysics2d::force_generator::{ConstantAcceleration, DefaultForceGeneratorSet, DefaultForceGeneratorHandle};
+use std::collections::HashMap;
 
+const LEFT: i8 = 0;
+const RIGHT: i8 = 1;
+const UP: i8 = 2;
+const DOWN: i8 = 3;
 
 pub struct Player{
     //TODO: implement player attributes
@@ -26,17 +31,24 @@ pub struct Player{
     //stores a reference to the RigidBodyObject representing the player
     rigid_body_handle:  Option<DefaultBodyHandle>,
     collider_handle: Option<DefaultColliderHandle>,
+    acc_handles: HashMap<i8, DefaultForceGeneratorHandle>,
 }
 
 impl Player {
-    pub fn new() -> Self {
+    pub fn new(left_handle: DefaultForceGeneratorHandle, right_handle: DefaultForceGeneratorHandle, up_handle: DefaultForceGeneratorHandle, down_handle: DefaultForceGeneratorHandle) -> Self {
 
         //TODO: create a new player in the center of the screen
-        Player {
+        let mut p = Player {
             score: 0,
             rigid_body_handle: None,
             collider_handle: None,
-        }
+            acc_handles: HashMap::with_capacity(4),
+        };
+        p.acc_handles.insert(LEFT, left_handle);
+        p.acc_handles.insert(RIGHT, right_handle);
+        p.acc_handles.insert(UP, up_handle);
+        p.acc_handles.insert(DOWN, down_handle);
+        return p;
     }
 
     pub fn createRigidBody(&mut self, bodies: &mut DefaultBodySet<f32>){
@@ -95,9 +107,10 @@ impl Player {
 
             println!("{}",player_body.part(0).unwrap().center_of_mass());
 
-            let mut left_acc = ConstantAcceleration::new(Vector2::new(-50.0, 10.0), 0.0);
-            left_acc.add_body_part(BodyPartHandle(self.rigid_body_handle.unwrap(), 0));
-            force_generators.insert(Box::new(left_acc));
+            //let mut l = force_generators.get(self.acc_handles.get(&LEFT).unwrap().clone());
+            let mut left = force_generators.get(self.acc_handles.get(&LEFT).unwrap().clone()).unwrap();
+            //let left = force_generators.get_mut(self.acc_handles.get(&LEFT).unwrap().clone()).unwrap();            )
+                add_body_part(BodyPartHandle(self.rigid_body_handle.unwrap(), 0));
         }
     }
 

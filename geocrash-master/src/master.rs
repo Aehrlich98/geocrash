@@ -10,12 +10,12 @@ use rand::prelude::*;
 
 
 use na::{Vector2, Point2, Isometry2};
-use nphysics2d::object::{BodyStatus, RigidBodyDesc};
+use nphysics2d::object::{BodyStatus, RigidBodyDesc, BodyPartHandle};
 use nphysics2d::math::{Velocity, Inertia};
 use ncollide2d::shape::{ShapeHandle, Ball};
 use nphysics2d::material::{MaterialHandle, BasicMaterial};
 use nphysics2d::object::{DefaultBodySet, DefaultColliderSet ,BodySet, ColliderSet, ColliderDesc};
-use nphysics2d::force_generator::{DefaultForceGeneratorSet, ForceGenerator};
+use nphysics2d::force_generator::{DefaultForceGeneratorSet, ForceGenerator, DefaultForceGeneratorHandle, ConstantAcceleration};
 use nphysics2d::joint::{DefaultJointConstraintSet, JointConstraintSet};
 use nphysics2d::world::{DefaultMechanicalWorld, DefaultGeometricalWorld};
 use ncollide2d::pipeline::CollisionWorld;
@@ -33,31 +33,54 @@ pub struct Master{
     pub gameObjList: Vec<GameObject>,   //list of all objects in game
     pub player: Player,
     count: i32,                     //test vraible to only the game run a fixed amount of ticks.
+
+    //control accelerations - are applied to the player, when a certain key is pressed (for example
+    //left arrow key for left_acc
+
 }
 //TODO: implement structs Player and Enemy
 
 impl Master{
     pub fn new(ctx: &mut Context) -> Self{
 
+
+        let mut force_generators = DefaultForceGeneratorSet::new();
+
+        let mut bodies = DefaultBodySet::new();
+        let mut colliders = DefaultColliderSet::new();
+        //these forceGenerators are used to apply a force to the player when the control keys are pressed
+        //to move the player
+        //the handles are passed to the player, since the player is the only object that needs them
+
+        //init ForceGenerators
+        let mut left_acc= ConstantAcceleration::new(Vector2::new(-50.0f32, 0.0), 0.0);
+        let mut right_acc = ConstantAcceleration::new(Vector2::new(50.0f32, 0.0), 0.0);
+        let mut up_acc = ConstantAcceleration::new(Vector2::new(0.0f32, 50.0f32), 0.0);
+        let mut down_acc = ConstantAcceleration::new(Vector2::new(-50.0f32, -50.0f32), 0.0);
+        //add ForceGenerators to set of forceGenerators; keep handles to pass to player
+        let left_handle: DefaultForceGeneratorHandle = force_generators.insert(Box::new(left_acc));
+        let right_handle = force_generators.insert(Box::new(right_acc));
+        let up_handle = force_generators.insert(Box::new(up_acc));
+        let down_handle = force_generators.insert(Box::new(down_acc));
+
+
+        let mut player = Player::new(left_handle, right_handle, up_handle, down_handle);
+        //init player
+        player.createRigidBody( &mut bodies);
+        player.create_collider(&mut colliders);
+
         let mut master = Master{
             mechanical_world: DefaultMechanicalWorld::new(Vector2::new(0.0, -9.81)),
             geometrical_world: DefaultGeometricalWorld::new(),
-            bodies: DefaultBodySet::new(),
-            colliders: DefaultColliderSet::new(),
+            bodies: bodies,
+            colliders: colliders,
             joint_constraints: DefaultJointConstraintSet::new(),
-            force_generators: DefaultForceGeneratorSet::new(),
+            force_generators: force_generators,
 
             gameObjList: Vec::new(),
-            player: Player::new(),
+            player: player,
             count: 0,
         };
-
-        //init player
-        master.player.createRigidBody( &mut master.bodies);
-        master.player.create_collider(&mut master.colliders);
-
-        //init ForceGenerators
-
         return master;
     }
 
