@@ -19,6 +19,8 @@ use nphysics2d::force_generator::{DefaultForceGeneratorSet, ForceGenerator, Defa
 use nphysics2d::joint::{DefaultJointConstraintSet, JointConstraintSet};
 use nphysics2d::world::{DefaultMechanicalWorld, DefaultGeometricalWorld};
 use ncollide2d::pipeline::CollisionWorld;
+use nphysics2d::algebra::ForceType::Force;
+use nphysics2d::algebra::{Force2, ForceType};
 
 pub const PLAYER_ID: i8 = 1;
 pub const GAME_OBJECT_ID: i8 = 2;
@@ -91,8 +93,38 @@ impl EventHandler for Master {
             let id1 = data1.downcast_ref::<i8>().unwrap();
             let id2 = data2.downcast_ref::<i8>().unwrap();
             if *id1 == PLAYER_ID && *id2 == GAME_OBJECT_ID || *id1 == GAME_OBJECT_ID && *id2 == PLAYER_ID{
-                //TODO: apply a one time force to the gameobject pulling it towards the center of the player
+
+                /*TODO: there on, we need a repeating impulse applied to the gameobject pulling it towards
+                the player. Right now, the game object gets a one time impulse. I suggest registering the
+                player in all close gameobjects and implementing an update method for game objects,
+                where that force is applied.
+                */
                 println!("Player is close to a game object");
+
+                let c = match *id2 {
+                    GAME_OBJECT_ID => proximity.collider2,
+                    _ => proximity.collider1,
+                };
+                let p = match *id1 {
+                    PLAYER_ID => proximity.collider1,
+                    _ => proximity.collider2,
+                };
+                //get player position
+                let player_pos: &Isometry2<f32> = self.colliders.get(p).unwrap().position();
+                let player_vec = &player_pos.translation.vector;
+
+                let go_pos : &Isometry2<f32> = self.colliders.get(c).unwrap().position();
+                let go_vec = &go_pos.translation.vector;
+
+                //we have the position of the player and the  game object -> calc player - game object to get force vector
+                let force_vec = Vector2::new(10f32*(player_vec.get(0).unwrap() - go_vec.get(0).unwrap()), 10f32*(player_vec.get(1).unwrap() - go_vec.get(1).unwrap()));
+                let f = Force2::new(force_vec, 0.0f32);
+
+                //apply force to game object
+                let mut object = self.bodies.get_mut(self.colliders.get(c).unwrap().body()).unwrap();
+                object.apply_force(0, &f, ForceType::Impulse, true);
+                println!("force applied");
+
             }
         }
 

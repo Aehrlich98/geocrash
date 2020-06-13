@@ -50,6 +50,7 @@ impl GameObject {
             .enable_gravity(false)
             .build();
         rigidBody.set_status(BodyStatus::Dynamic);
+        rigidBody.set_linear_damping(1.0);
         rigidBody.set_user_data(Some(Box::new(master::GAME_OBJECT_ID)));
         let rb_handle = bodies.insert(rigidBody);
 

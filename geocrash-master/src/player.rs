@@ -32,6 +32,7 @@ pub struct Player{
     //stores a reference to the RigidBodyObject representing the player
     rigid_body_handle:  Option<DefaultBodyHandle>,
     collider_handle: Option<DefaultColliderHandle>,
+    sensor_collider_handle: Option<DefaultColliderHandle>,
     acc_handles: HashMap<i8, DefaultForceGeneratorHandle>,
 }
 
@@ -43,6 +44,7 @@ impl Player {
             score: 0,
             rigid_body_handle: None,
             collider_handle: None,
+            sensor_collider_handle: None,
             acc_handles: HashMap::with_capacity(4),
         };
         return p;
@@ -84,13 +86,18 @@ impl Player {
         let handle = self.rigid_body_handle.unwrap();
 
         let shape = ShapeHandle::new(Ball::new(1.5));
-        let collider = ColliderDesc::new(shape)
+        let colliderPattern = ColliderDesc::new(shape)
             .density(1.5)
             .material(MaterialHandle::new(BasicMaterial::new(0.3, 0.5)))
             .margin(35.00)
-            .user_data(master::PLAYER_ID) //id
+            .user_data(master::PLAYER_ID);
+        let collider = colliderPattern.build(BodyPartHandle(handle, 0));
+        let sensor = colliderPattern
+            .sensor(true)
+            .linear_prediction(150.0) //this defines the maximum distance between a player and a game object that still triggers a proximity event
             .build(BodyPartHandle(handle, 0));
         let collider_handle = colliders.insert(collider);
+        self.sensor_collider_handle = Some(colliders.insert(sensor));
         self.collider_handle = Some(collider_handle);
     }
 
