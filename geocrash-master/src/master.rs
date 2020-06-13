@@ -26,6 +26,8 @@ pub const PLAYER_ID: i8 = 1;
 pub const GAME_OBJECT_ID: i8 = 2;
 
 pub struct Master{
+     window_mode: WindowMode,                            //holds data about window size
+    
     mechanical_world: DefaultMechanicalWorld<f32>,    //N/M types are somehow not right??? Maybe give specific types???
     geometrical_world: DefaultGeometricalWorld<f32>,
 
@@ -41,8 +43,9 @@ pub struct Master{
 }
 
 impl Master{
-    pub fn new(ctx: &mut Context) -> Self{
-
+    pub fn new(ctx: &mut Context, window_mode: WindowMode) -> Self{
+        window_mode,
+        
         let mut force_generators = DefaultForceGeneratorSet::new();
 
         let mut bodies = DefaultBodySet::new();
