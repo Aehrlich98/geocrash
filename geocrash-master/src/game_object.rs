@@ -29,7 +29,7 @@ pub struct GameObject {
 
 impl GameObject {
     //create GameObject, add its rigidbody, collider into the sets from Master
-    pub fn new(bodies: &mut DefaultBodySet<f32>, colliders: &mut DefaultColliderSet<f32>) -> Self{
+    pub fn new(bodies: &mut DefaultBodySet<f32>, colliders: &mut DefaultColliderSet<f32>, , right_bound: f32, bottom_bound: f32) -> Self{
 
         //TODO: use context object to make bounds fitted to window
         let left_bound = 0.0;
