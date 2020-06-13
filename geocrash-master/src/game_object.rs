@@ -33,14 +33,12 @@ impl GameObject {
 
         //TODO: use context object to make bounds fitted to window
         let left_bound = 0.0;
-        let right_bound = 800.0;
         let top_bounds = 0.0;
-        let bottom_bounds = 600.0;
 
         let mut rng = rand::thread_rng();
         let x_pos = rng.gen_range(left_bound, right_bound);
         println!("x_pos: {}", x_pos);
-        let y_pos = rng.gen_range(top_bounds, bottom_bounds);
+        let y_pos = rng.gen_range(top_bounds, bottom_bound);
 
         let position = Isometry2::new(Vector2::new(x_pos, y_pos), PI);
             //create the necessary isntances for simulation
