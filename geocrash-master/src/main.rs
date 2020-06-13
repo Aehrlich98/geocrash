@@ -13,7 +13,20 @@ mod lib;
 static gameSize: i32 = 600;
 
 fn main() {
-    // Make a Context.
+    // custom WindowMode struct holding size, and original state of the game window.
+    let window_mode = WindowMode {
+        width: 800.0,
+        height: 600.0,
+        maximized: false,
+        fullscreen_type: FullscreenType::Windowed,
+        borderless: false,
+        min_width: 800.0,
+        max_width: 0.0,
+        min_height: 600.0,
+        max_height: 0.0,
+        resizable: true,
+    };
+    
     let (mut ctx, mut event_loop) = ContextBuilder::new("my_game", "Cool Game Author")
         .build()
         .expect("aieee, could not create ggez context!");
@@ -26,7 +39,7 @@ fn main() {
     //spawn other GameObjects
     let pos = (0, 0);
     while my_game.gameObjList.len() < 10{ //place GameObjects, until max number of allowed Object is reached.
-        my_game.gameObjList.push(GameObject::new(&mut my_game.bodies, &mut my_game.colliders));
+        my_game.gameObjList.push(GameObject::new(&mut my_game.bodies, &mut my_game.colliders, window_mode.height, window_mode.width));
         //TODO place at random positions, check that no two objects are placed "into" each other
        // pos.x() + 10;
         //pos.y() + 10;
