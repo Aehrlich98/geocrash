@@ -86,7 +86,7 @@ fn create_bound(master: &mut Master, pos: Vector2<f32>, size: Vector2<f32>) -> (
         .density(1.0)
         .material(MaterialHandle::new(BasicMaterial::new(0.4, 0.6)))    //TODO (?) fine tune values
         .margin(0.1f32)
-        .user_data(master::BOUND_ID)
+        .user_data(0i8)
         .build(BodyPartHandle(bound_rb_handle, 0));
     let collider_handle = master.colliders.insert(collider);
 
