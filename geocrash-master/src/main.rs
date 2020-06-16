@@ -2,15 +2,21 @@ use ggez::*;
 use nphysics2d::*;
 use ncollide2d::*;
 
+extern crate nalgebra as na;
+
 use crate::game_object::GameObject;
 use crate::master::Master;
+use ggez::conf::{FullscreenType, WindowMode};
+use na::{Vector2, Isometry2};
+use nphysics2d::object::{RigidBodyDesc, BodyStatus, ColliderDesc, BodyPartHandle, DefaultBodyHandle, DefaultColliderHandle};
+use ncollide2d::shape::{ShapeHandle, Cuboid};
+use nphysics2d::material::{BasicMaterial, MaterialHandle};
 
 mod game_object;
 mod master;
 mod player;
 mod lib;
-
-static gameSize: i32 = 600;
+mod constants;
 
 fn main() {
     // custom WindowMode struct holding size, and original state of the game window.
@@ -32,7 +38,7 @@ fn main() {
         .expect("aieee, could not create ggez context!");
 
     // Create an instance of your event handler.
-    let mut my_game = Master::new(&mut ctx);
+    let mut my_game = Master::new(&mut ctx, window_mode);
 
     //spawn starting objects:
     //create boundaries for game world: (left, right, upper, lower)
@@ -86,7 +92,7 @@ fn create_bound(master: &mut Master, pos: Vector2<f32>, size: Vector2<f32>) -> (
         .density(1.0)
         .material(MaterialHandle::new(BasicMaterial::new(0.4, 0.6)))    //TODO (?) fine tune values
         .margin(0.1f32)
-        .user_data(master::BOUND_ID)
+        .user_data(constants::BOUND_ID)
         .build(BodyPartHandle(bound_rb_handle, 0));
     let collider_handle = master.colliders.insert(collider);
 

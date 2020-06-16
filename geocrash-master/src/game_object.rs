@@ -19,6 +19,7 @@ use rand::Rng;
 use std::f32::consts::PI;
 use ggez::conf::Conf;
 use crate::master;
+use crate::constants;
 //OUT type Point = (i32, i32);
 
 pub struct GameObject {
@@ -29,7 +30,7 @@ pub struct GameObject {
 
 impl GameObject {
     //create GameObject, add its rigidbody, collider into the sets from Master
-    pub fn new(bodies: &mut DefaultBodySet<f32>, colliders: &mut DefaultColliderSet<f32>, , right_bound: f32, bottom_bound: f32) -> Self{
+    pub fn new(bodies: &mut DefaultBodySet<f32>, colliders: &mut DefaultColliderSet<f32>, right_bound: f32, bottom_bound: f32) -> Self{
 
         //TODO: use context object to make bounds fitted to window
         let left_bound = 0.0;
@@ -49,7 +50,7 @@ impl GameObject {
             .build();
         rigidBody.set_status(BodyStatus::Dynamic);
         rigidBody.set_linear_damping(1.0);
-        rigidBody.set_user_data(Some(Box::new(master::GAME_OBJECT_ID)));
+        rigidBody.set_user_data(Some(Box::new(constants::GAME_OBJECT_ID)));
         let rb_handle = bodies.insert(rigidBody);
 
         //let shape = ShapeHandle::new(Cuboid::new(
@@ -59,7 +60,7 @@ impl GameObject {
             .density(1.0)
             .material(MaterialHandle::new(BasicMaterial::new(0.4, 0.6)))
             .margin(8f32)
-            .user_data(master::GAME_OBJECT_ID)
+            .user_data(constants::GAME_OBJECT_ID)
             .build(BodyPartHandle(rb_handle, 0));
         let col_handle = colliders.insert(collider);
 

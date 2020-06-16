@@ -21,9 +21,9 @@ use nphysics2d::world::{DefaultMechanicalWorld, DefaultGeometricalWorld};
 use ncollide2d::pipeline::CollisionWorld;
 use nphysics2d::algebra::ForceType::Force;
 use nphysics2d::algebra::{Force2, ForceType};
+use ggez::conf::WindowMode;
+use crate::constants;
 
-pub const PLAYER_ID: i8 = 1;
-pub const GAME_OBJECT_ID: i8 = 2;
 
 pub struct Master{
     window_mode: WindowMode,                            //holds data about window size
@@ -96,7 +96,7 @@ impl EventHandler for Master {
             let data2= self.colliders.get(proximity.collider2).unwrap().user_data().unwrap();
             let id1 = data1.downcast_ref::<i8>().unwrap();
             let id2 = data2.downcast_ref::<i8>().unwrap();
-            if *id1 == PLAYER_ID && *id2 == GAME_OBJECT_ID || *id1 == GAME_OBJECT_ID && *id2 == PLAYER_ID{
+            if *id1 == constants::PLAYER_ID && *id2 == constants::GAME_OBJECT_ID || *id1 == constants::GAME_OBJECT_ID && *id2 == constants::PLAYER_ID{
 
                 /*TODO: there on, we need a repeating impulse applied to the gameobject pulling it towards
                 the player. Right now, the game object gets a one time impulse. I suggest registering the
