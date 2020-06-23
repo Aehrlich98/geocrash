@@ -8,20 +8,20 @@ use na::{Vector2, Isometry2};
 use nphysics2d::object::{BodyStatus, RigidBodyDesc, Collider, DefaultBodyHandle, Body};
 use nphysics2d::math::{Velocity, Inertia};
 use nphysics2d::material::{MaterialHandle, BasicMaterial};
-use nphysics2d::object::{DefaultBodySet, DefaultColliderSet ,BodySet, ColliderSet, ColliderDesc, BodyPartHandle};
-use nphysics2d::force_generator::{DefaultForceGeneratorSet, ForceGenerator};
-use nphysics2d::joint::{DefaultJointConstraintSet, JointConstraintSet};
+use nphysics2d::object::{DefaultBodySet, DefaultColliderSet, ColliderDesc, BodyPartHandle};
+use nphysics2d::force_generator::{DefaultForceGeneratorSet};
+use nphysics2d::joint::DefaultJointConstraintSet;
 use nphysics2d::world::{DefaultMechanicalWorld, DefaultGeometricalWorld};
 use ncollide2d::shape::{ShapeHandle, Cuboid, Ball};
 use ggez::graphics::{DrawParam, Color};
 use ggez::mint::Point2;
-use rand::Rng;
 use std::f32::consts::PI;
 use ggez::conf::Conf;
 use crate::master;
 use crate::constants;
 use nphysics2d::algebra::{Force2, ForceType};
-//OUT type Point = (i32, i32);
+use rand::Rng;
+use ggez::nalgebra::UnitComplex;
 
 pub struct GameObject {
     handleRigidBody: Option<DefaultBodyHandle>,    //mutable handles
@@ -31,6 +31,7 @@ pub struct GameObject {
 }
 
 impl GameObject {
+
     //create GameObject, add its rigidbody, collider into the sets from Master
     pub fn new(bodies: &mut DefaultBodySet<f32>, id: i8, colliders: &mut DefaultColliderSet<f32>, right_bound: f32, bottom_bound: f32) -> Self{
 
@@ -44,27 +45,10 @@ impl GameObject {
         let y_pos = rng.gen_range(top_bounds, bottom_bound);
 
         let position = Isometry2::new(Vector2::new(x_pos, y_pos), PI);
-            //create the necessary isntances for simulation
-        let mut rigidBody = RigidBodyDesc::new()
-            .mass(0.01)
-            .position(position)
-            .enable_gravity(false)
-            .build();
-        rigidBody.set_status(BodyStatus::Dynamic);
-        rigidBody.set_linear_damping(1.0);
-        rigidBody.set_user_data(Some(Box::new(id)));
-        let rb_handle = bodies.insert(rigidBody);
 
-        //let shape = ShapeHandle::new(Cuboid::new(
-                //Vector2::new(5.0f32, 5.0)));
-        let shape = ShapeHandle::new(Ball::new(1.0));
-        let collider = ColliderDesc::new(shape)
-            .density(1.0)
-            .material(MaterialHandle::new(BasicMaterial::new(0.4, 0.6)))
-            .margin(8f32)
-            .user_data(id)
-            .build(BodyPartHandle(rb_handle, 0));
-        let col_handle = colliders.insert(collider);
+        let rb_handle = create_rigid_body(position, id, bodies);
+        let col_handle = create_collider(rb_handle, id, colliders);
+
 
         let go = GameObject {
             //give handles to GameObject
@@ -115,6 +99,7 @@ impl GameObject {
         }
     }
 
+
     pub fn draw(&self, context: &mut Context, bodies: &mut DefaultBodySet<f32>) -> GameResult<i8>{
         let rb_handle = self.handleRigidBody.unwrap();
         let rb = bodies.rigid_body(rb_handle).unwrap();
@@ -138,4 +123,28 @@ impl GameObject {
         Ok(0)
     }
 
+}
+
+fn create_rigid_body(position: Isometry2<f32>, id: i8, bodies: &mut DefaultBodySet<f32>) -> DefaultBodyHandle{
+    //create the necessary isntances for simulation
+    let mut rigidBody = RigidBodyDesc::new()
+        .mass(0.01)
+        .position(position)
+        .enable_gravity(false)
+        .build();
+    rigidBody.set_status(BodyStatus::Dynamic);
+    rigidBody.set_linear_damping(1.0);
+    rigidBody.set_user_data(Some(Box::new(id)));
+    bodies.insert(rigidBody)
+}
+
+fn create_collider(rb_handle: DefaultBodyHandle, id: i8, colliders: &mut DefaultColliderSet<f32>) -> DefaultBodyHandle{
+    let shape = ShapeHandle::new(Ball::new(1.0));
+    let collider = ColliderDesc::new(shape)
+        .density(1.0)
+        .material(MaterialHandle::new(BasicMaterial::new(0.4, 0.6)))
+        .margin(8f32)
+        .user_data(id)
+        .build(BodyPartHandle(rb_handle, 0));
+    colliders.insert(collider)
 }

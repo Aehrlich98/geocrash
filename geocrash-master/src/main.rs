@@ -48,9 +48,6 @@ fn main() {
     create_bound(&mut my_game, Vector2::new(window_mode.width/2.0, window_mode.height), Vector2::new(window_mode.width, 0.1));
     
 
-    //--------------------------------------
-    //ggez loop. MUST NOT BE USED UNLESS GGEZ IS USED FOR FRONTEND
-
     // Run!
     match event::run(&mut ctx, &mut event_loop, &mut my_game) {
         Ok(_) => println!("Exited cleanly."),

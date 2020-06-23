@@ -1,6 +1,6 @@
 use ggez::graphics::{DrawParam, BlendMode, Mesh};
-use ggez::{graphics, ContextBuilder, GameResult, Context};
-use ggez::event::{self, EventHandler, KeyCode};
+use ggez::{ContextBuilder, GameResult, Context, graphics};
+use ggez::event::{self, KeyCode};
 use ggez::mint::Point2;
 use nphysics2d::object::{RigidBodyDesc, BodyStatus, RigidBody, Collider, ColliderDesc, DefaultBodyHandle, DefaultBodySet, DefaultColliderSet, DefaultColliderHandle, BodyPartHandle};
 use nalgebra::{Isometry2, Vector2};
@@ -10,9 +10,7 @@ use std::alloc::handle_alloc_error;
 use ncollide2d::shape::{ShapeHandle, Ball};
 use ggez::nalgebra::{UnitComplex, Isometry};
 use nphysics2d::material::{MaterialHandle, BasicMaterial};
-use std::ops::{Index, Deref, DerefMut};
 use ggez::conf::Conf;
-use std::borrow::{Borrow, BorrowMut};
 use ggez::input::keyboard::KeyboardContext;
 use ggez::input::keyboard;
 use nphysics2d::algebra::ForceType::Force;

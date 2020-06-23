@@ -1,32 +1,28 @@
 use crate::player::Player;
 use crate::game_object::GameObject;
-use ggez::*;
 use ggez::graphics::Mesh;
 use ggez::event::{EventHandler};
 use ggez::conf::WindowMode;
 use nphysics2d::*;
-use ncollide2d::*;
 extern crate nalgebra as na;
 use rand::prelude::*;
 
 
 use na::{Vector2, Point2, Isometry2};
 use nphysics2d::object::{BodyStatus, RigidBodyDesc, BodyPartHandle};
-use nphysics2d::math::Velocity;
-use nphysics2d::math::Inertia;
 use ncollide2d::shape::{ShapeHandle, Ball};
 use nphysics2d::material::{MaterialHandle, BasicMaterial};
-use nphysics2d::object::{DefaultBodySet, DefaultColliderSet ,BodySet, ColliderSet, ColliderDesc};
-use nphysics2d::force_generator::{DefaultForceGeneratorSet, ForceGenerator, DefaultForceGeneratorHandle, ConstantAcceleration};
-use nphysics2d::joint::{DefaultJointConstraintSet, JointConstraintSet};
+use nphysics2d::object::{DefaultBodySet, DefaultColliderSet, ColliderDesc};
+use nphysics2d::force_generator::{DefaultForceGeneratorSet, DefaultForceGeneratorHandle, ConstantAcceleration};
+use nphysics2d::joint::{DefaultJointConstraintSet};
 use nphysics2d::world::{DefaultMechanicalWorld, DefaultGeometricalWorld};
 use ncollide2d::pipeline::CollisionWorld;
-use nphysics2d::algebra::ForceType::Force;
 use nphysics2d::algebra::{Force2, ForceType};
 use crate::constants;
 use std::collections::HashMap;
 use std::thread::spawn;
 use ncollide2d::query::Proximity;
+use ggez::{Context, GameResult, event, graphics};
 
 
 pub struct Master{
@@ -48,6 +44,7 @@ pub struct Master{
 }
 
 impl Master{
+
     pub fn new(ctx: &mut Context, window_mode: WindowMode) -> Self{
         
         let mut force_generators = DefaultForceGeneratorSet::new();
@@ -92,34 +89,10 @@ impl Master{
             id += 1;
         }
     }
-}
 
-//EventHandler handling events...
-impl EventHandler for Master {
-    fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
-        self.player1.update(_ctx, &mut self.bodies, &mut self.force_generators);
-        self.player2.update(_ctx, &mut self.bodies, &mut self.force_generators);
-
-         //get player position
-        let player1_pos: Isometry2<f32> = self.colliders.get(self.player1.collider_handle.unwrap()).unwrap().position().clone();
-        let player2_pos: Isometry2<f32> = self.colliders.get(self.player2.collider_handle.unwrap()).unwrap().position().clone();
-
-
-
-        for (_, go) in &mut self.gameObjList{
-            go.update(&mut self.colliders, &mut self.bodies, &player1_pos, &player2_pos);
-        };
-        self.mechanical_world.step(     //move the simulation further one step
-            &mut self.geometrical_world,
-            &mut self.bodies,
-            &mut self.colliders,
-            &mut self.joint_constraints,
-            &mut self.force_generators
-        );
-
+    fn handle_proximity_events(&mut self){
         for proximity in self.geometrical_world.proximity_events(){
             //handle proximity events
-            println!("Proximity detected");
             let data1 = self.colliders.get(proximity.collider1).unwrap().user_data().unwrap();
             let data2= self.colliders.get(proximity.collider2).unwrap().user_data().unwrap();
             let id1 = data1.downcast_ref::<i8>().unwrap();
@@ -127,13 +100,11 @@ impl EventHandler for Master {
 
             //case player 1 is close to game object
             if *id1 == constants::PLAYER1_ID && *id2 >= 50 && *id2 <= 100 || *id1 >= 50 && *id1 <= 100 && *id2 == constants::PLAYER1_ID{
-                println!("Player is close to a game object");
                 //register player at game object
                 let go_id = match *id1 {
                     constants::PLAYER1_ID => *id2,
                     _ => *id1,
                 };
-
                 if proximity.new_status == Proximity::Disjoint{
                     self.gameObjList.get_mut(&go_id).unwrap().deregisterPlayer(constants::PLAYER1_ID);
                 }
@@ -142,11 +113,59 @@ impl EventHandler for Master {
                 }
 
             }
-        }
+            //case player 2 is close to game object
+            if *id1 == constants::PLAYER2_ID && *id2 >= 50 && *id2 <= 100 || *id1 >= 50 && *id1 <= 100 && *id2 == constants::PLAYER2_ID{
+                //register player at game object
+                let go_id = match *id1 {
+                    constants::PLAYER2_ID => *id2,
+                    _ => *id1,
+                };
+                if proximity.new_status == Proximity::Disjoint{
+                    self.gameObjList.get_mut(&go_id).unwrap().deregisterPlayer(constants::PLAYER2_ID);
+                }
+                else {
+                    self.gameObjList.get_mut(&go_id).unwrap().registerPlayer(constants::PLAYER2_ID);
+                }
 
-        for contact in self.geometrical_world.contact_events(){
-            println!("Contact happened");
+            }
         }
+    }
+
+    fn handle_contact_events(&mut self){
+        //check whether player has been shot
+        for contact in self.geometrical_world.contact_events(){
+        }
+    }
+
+    fn update_game_objects(&mut self){
+        //get player position
+        let player1_pos: Isometry2<f32> = self.colliders.get(self.player1.collider_handle.unwrap()).unwrap().position().clone();
+        let player2_pos: Isometry2<f32> = self.colliders.get(self.player2.collider_handle.unwrap()).unwrap().position().clone();
+
+        for (_, go) in &mut self.gameObjList{
+            go.update(&mut self.colliders, &mut self.bodies, &player1_pos, &player2_pos);
+        };
+    }
+}
+
+//EventHandler handling events...
+impl EventHandler for Master {
+    fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
+        self.player1.update(_ctx, &mut self.bodies, &mut self.force_generators);
+        self.player2.update(_ctx, &mut self.bodies, &mut self.force_generators);
+
+        self.mechanical_world.step(     //move the simulation further one step
+            &mut self.geometrical_world,
+            &mut self.bodies,
+            &mut self.colliders,
+            &mut self.joint_constraints,
+            &mut self.force_generators
+        );
+
+        self.handle_proximity_events();
+
+        self.handle_contact_events();
+
 
         if self.count+1 == 10 {
             event::quit(_ctx);  //End game
