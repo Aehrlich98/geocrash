@@ -3,6 +3,7 @@ use crate::game_object::GameObject;
 use ggez::*;
 use ggez::graphics::Mesh;
 use ggez::event::{EventHandler};
+use ggez::conf::WindowMode;
 use nphysics2d::*;
 use ncollide2d::*;
 extern crate nalgebra as na;
@@ -37,7 +38,8 @@ pub struct Master{
     force_generators: DefaultForceGeneratorSet<f32>,
 
     pub gameObjList: Vec<GameObject>,   //list of all objects in game
-    pub player: Player,
+    pub player1: Player,
+    pub player2: Player,
     count: i32,                     //test vraible to only the game run a fixed amount of ticks.
 
 }
@@ -51,10 +53,15 @@ impl Master{
         let mut colliders = DefaultColliderSet::new();
 
 
-        let mut player = Player::new();
+        let mut player1 = Player::new(true);
         //init player
-        player.createRigidBody( &mut bodies);
-        player.create_collider(&mut colliders);
+        player1.createRigidBody( &mut bodies);
+        player1.create_collider(&mut colliders);
+
+        let mut player2 = Player::new(false);
+        //init player
+        player2.createRigidBody( &mut bodies);
+        player2.create_collider(&mut colliders);
 
         let mut master = Master{
             window_mode,
@@ -67,7 +74,8 @@ impl Master{
             force_generators: force_generators,
 
             gameObjList: Vec::new(),
-            player: player,
+            player1: player1,
+            player2: player2,
             count: 0,
         };
         return master;
@@ -79,7 +87,8 @@ impl Master{
 //EventHandler handling events...
 impl EventHandler for Master {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
-        self.player.update(_ctx, &mut self.bodies, &mut self.force_generators);
+        self.player1.update(_ctx, &mut self.bodies, &mut self.force_generators);
+        self.player2.update(_ctx, &mut self.bodies, &mut self.force_generators);
 
         self.mechanical_world.step(     //move the simulation further one step
             &mut self.geometrical_world,
@@ -146,7 +155,8 @@ impl EventHandler for Master {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, graphics::WHITE);
-        self.player.draw(ctx, &mut self.bodies);
+        self.player1.draw(ctx, &mut self.bodies);
+        self.player2.draw(ctx, &mut self.bodies);
 
         for go in &self.gameObjList{
             go.draw(ctx, &mut self.bodies);

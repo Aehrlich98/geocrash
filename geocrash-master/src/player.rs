@@ -30,11 +30,14 @@ pub struct Player{
     collider_handle: Option<DefaultColliderHandle>,
     sensor_collider_handle: Option<DefaultColliderHandle>,
     acc_handles: HashMap<i8, DefaultForceGeneratorHandle>,
+    LEFT_KEY: KeyCode,
+    RIGHT_KEY: KeyCode,
+    UP_KEY: KeyCode,
+    DOWN_KEY: KeyCode,
 }
 
 impl Player {
-    pub fn new() -> Self {
-
+    pub fn new(first: bool) -> Self {
         //TODO: create a new player in the center of the screen
         let mut p = Player {
             score: 0,
@@ -42,7 +45,17 @@ impl Player {
             collider_handle: None,
             sensor_collider_handle: None,
             acc_handles: HashMap::with_capacity(4),
+            LEFT_KEY: KeyCode::Left,
+            RIGHT_KEY: KeyCode::Right,
+            UP_KEY: KeyCode::Up,
+            DOWN_KEY: KeyCode::Down,
         };
+        if !first {
+            p.LEFT_KEY = KeyCode::A;
+            p.RIGHT_KEY = KeyCode::D;
+            p.UP_KEY = KeyCode::W;
+            p.DOWN_KEY = KeyCode::S;
+        }
         return p;
     }
 
