@@ -47,22 +47,6 @@ fn main() {
     create_bound(&mut my_game, Vector2::new(window_mode.width/2.0, 0.0), Vector2::new(window_mode.width, 0.1));
     create_bound(&mut my_game, Vector2::new(window_mode.width/2.0, window_mode.height), Vector2::new(window_mode.width, 0.1));
     
-    //TODO spawn player(s)
-    //spawn other GameObjects
-    let pos = (0, 0);
-    while my_game.gameObjList.len() < 10{ //place GameObjects, until max number of allowed Object is reached.
-        my_game.gameObjList.push(GameObject::new(&mut my_game.bodies, &mut my_game.colliders, window_mode.height, window_mode.width));
-        //TODO place at random positions, check that no two objects are placed "into" each other
-       // pos.x() + 10;
-        //pos.y() + 10;
-    }
-
-    /*
-    loop {
-        my_game.update();
-        my_game.draw(&mut ctx);
-    }
-*/
 
     //--------------------------------------
     //ggez loop. MUST NOT BE USED UNLESS GGEZ IS USED FOR FRONTEND

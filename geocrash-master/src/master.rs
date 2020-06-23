@@ -12,7 +12,8 @@ use rand::prelude::*;
 
 use na::{Vector2, Point2, Isometry2};
 use nphysics2d::object::{BodyStatus, RigidBodyDesc, BodyPartHandle};
-use nphysics2d::math::{Velocity, Inertia};
+use nphysics2d::math::Velocity;
+use nphysics2d::math::Inertia;
 use ncollide2d::shape::{ShapeHandle, Ball};
 use nphysics2d::material::{MaterialHandle, BasicMaterial};
 use nphysics2d::object::{DefaultBodySet, DefaultColliderSet ,BodySet, ColliderSet, ColliderDesc};
@@ -22,8 +23,10 @@ use nphysics2d::world::{DefaultMechanicalWorld, DefaultGeometricalWorld};
 use ncollide2d::pipeline::CollisionWorld;
 use nphysics2d::algebra::ForceType::Force;
 use nphysics2d::algebra::{Force2, ForceType};
-use ggez::conf::WindowMode;
 use crate::constants;
+use std::collections::HashMap;
+use std::thread::spawn;
+use ncollide2d::query::Proximity;
 
 
 pub struct Master{
@@ -37,7 +40,7 @@ pub struct Master{
     joint_constraints: DefaultJointConstraintSet<f32>,
     force_generators: DefaultForceGeneratorSet<f32>,
 
-    pub gameObjList: Vec<GameObject>,   //list of all objects in game
+    pub gameObjList: HashMap<i8, GameObject>,   //list of all objects in game
     pub player1: Player,
     pub player2: Player,
     count: i32,                     //test vraible to only the game run a fixed amount of ticks.
@@ -73,16 +76,23 @@ impl Master{
             joint_constraints: DefaultJointConstraintSet::new(),
             force_generators: force_generators,
 
-            gameObjList: Vec::new(),
+            gameObjList: HashMap::with_capacity(20),
             player1: player1,
             player2: player2,
             count: 0,
         };
+        master.spawn_game_objects();
         return master;
     }
 
+    fn spawn_game_objects(&mut self){
+        let mut id = 50i8;
+        while self.gameObjList.len() < 20{ //place GameObjects, until max number of allowed Object is reached.
+            self.gameObjList.insert(id, GameObject::new(&mut self.bodies, id, &mut self.colliders, self.window_mode.height, self.window_mode.width));
+            id += 1;
+        }
+    }
 }
-
 
 //EventHandler handling events...
 impl EventHandler for Master {
@@ -90,6 +100,15 @@ impl EventHandler for Master {
         self.player1.update(_ctx, &mut self.bodies, &mut self.force_generators);
         self.player2.update(_ctx, &mut self.bodies, &mut self.force_generators);
 
+         //get player position
+        let player1_pos: Isometry2<f32> = self.colliders.get(self.player1.collider_handle.unwrap()).unwrap().position().clone();
+        let player2_pos: Isometry2<f32> = self.colliders.get(self.player2.collider_handle.unwrap()).unwrap().position().clone();
+
+
+
+        for (_, go) in &mut self.gameObjList{
+            go.update(&mut self.colliders, &mut self.bodies, &player1_pos, &player2_pos);
+        };
         self.mechanical_world.step(     //move the simulation further one step
             &mut self.geometrical_world,
             &mut self.bodies,
@@ -105,38 +124,22 @@ impl EventHandler for Master {
             let data2= self.colliders.get(proximity.collider2).unwrap().user_data().unwrap();
             let id1 = data1.downcast_ref::<i8>().unwrap();
             let id2 = data2.downcast_ref::<i8>().unwrap();
-            if *id1 == constants::PLAYER_ID && *id2 == constants::GAME_OBJECT_ID || *id1 == constants::GAME_OBJECT_ID && *id2 == constants::PLAYER_ID{
 
-                /*TODO: there on, we need a repeating impulse applied to the gameobject pulling it towards
-                the player. Right now, the game object gets a one time impulse. I suggest registering the
-                player in all close gameobjects and implementing an update method for game objects,
-                where that force is applied.
-                */
+            //case player 1 is close to game object
+            if *id1 == constants::PLAYER1_ID && *id2 >= 50 && *id2 <= 100 || *id1 >= 50 && *id1 <= 100 && *id2 == constants::PLAYER1_ID{
                 println!("Player is close to a game object");
-
-                let c = match *id2 {
-                    GAME_OBJECT_ID => proximity.collider2,
-                    _ => proximity.collider1,
+                //register player at game object
+                let go_id = match *id1 {
+                    constants::PLAYER1_ID => *id2,
+                    _ => *id1,
                 };
-                let p = match *id1 {
-                    PLAYER_ID => proximity.collider1,
-                    _ => proximity.collider2,
-                };
-                //get player position
-                let player_pos: &Isometry2<f32> = self.colliders.get(p).unwrap().position();
-                let player_vec = &player_pos.translation.vector;
 
-                let go_pos : &Isometry2<f32> = self.colliders.get(c).unwrap().position();
-                let go_vec = &go_pos.translation.vector;
-
-                //we have the position of the player and the  game object -> calc player - game object to get force vector
-                let force_vec = Vector2::new(10f32*(player_vec.get(0).unwrap() - go_vec.get(0).unwrap()), 10f32*(player_vec.get(1).unwrap() - go_vec.get(1).unwrap()));
-                let f = Force2::new(force_vec, 0.0f32);
-
-                //apply force to game object
-                let mut object = self.bodies.get_mut(self.colliders.get(c).unwrap().body()).unwrap();
-                object.apply_force(0, &f, ForceType::Impulse, true);
-                println!("force applied");
+                if proximity.new_status == Proximity::Disjoint{
+                    self.gameObjList.get_mut(&go_id).unwrap().deregisterPlayer(constants::PLAYER1_ID);
+                }
+                else {
+                    self.gameObjList.get_mut(&go_id).unwrap().registerPlayer(constants::PLAYER1_ID);
+                }
 
             }
         }
@@ -144,8 +147,6 @@ impl EventHandler for Master {
         for contact in self.geometrical_world.contact_events(){
             println!("Contact happened");
         }
-
-
 
         if self.count+1 == 10 {
             event::quit(_ctx);  //End game
@@ -158,7 +159,7 @@ impl EventHandler for Master {
         self.player1.draw(ctx, &mut self.bodies);
         self.player2.draw(ctx, &mut self.bodies);
 
-        for go in &self.gameObjList{
+        for (_, go) in &self.gameObjList{
             go.draw(ctx, &mut self.bodies);
         }
         graphics::present(ctx)

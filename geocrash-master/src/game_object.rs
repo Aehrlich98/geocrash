@@ -20,17 +20,19 @@ use std::f32::consts::PI;
 use ggez::conf::Conf;
 use crate::master;
 use crate::constants;
+use nphysics2d::algebra::{Force2, ForceType};
 //OUT type Point = (i32, i32);
 
 pub struct GameObject {
     handleRigidBody: Option<DefaultBodyHandle>,    //mutable handles
     handleCollider: Option<DefaultBodyHandle>,
-
+    registeredPlayerID: Option<i8>,
+    id: i8,
 }
 
 impl GameObject {
     //create GameObject, add its rigidbody, collider into the sets from Master
-    pub fn new(bodies: &mut DefaultBodySet<f32>, colliders: &mut DefaultColliderSet<f32>, right_bound: f32, bottom_bound: f32) -> Self{
+    pub fn new(bodies: &mut DefaultBodySet<f32>, id: i8, colliders: &mut DefaultColliderSet<f32>, right_bound: f32, bottom_bound: f32) -> Self{
 
         //TODO: use context object to make bounds fitted to window
         let left_bound = 0.0;
@@ -44,13 +46,13 @@ impl GameObject {
         let position = Isometry2::new(Vector2::new(x_pos, y_pos), PI);
             //create the necessary isntances for simulation
         let mut rigidBody = RigidBodyDesc::new()
-            .mass(10.0)
+            .mass(0.01)
             .position(position)
             .enable_gravity(false)
             .build();
         rigidBody.set_status(BodyStatus::Dynamic);
         rigidBody.set_linear_damping(1.0);
-        rigidBody.set_user_data(Some(Box::new(constants::GAME_OBJECT_ID)));
+        rigidBody.set_user_data(Some(Box::new(id)));
         let rb_handle = bodies.insert(rigidBody);
 
         //let shape = ShapeHandle::new(Cuboid::new(
@@ -60,7 +62,7 @@ impl GameObject {
             .density(1.0)
             .material(MaterialHandle::new(BasicMaterial::new(0.4, 0.6)))
             .margin(8f32)
-            .user_data(constants::GAME_OBJECT_ID)
+            .user_data(id)
             .build(BodyPartHandle(rb_handle, 0));
         let col_handle = colliders.insert(collider);
 
@@ -68,13 +70,49 @@ impl GameObject {
             //give handles to GameObject
             handleRigidBody: Some(rb_handle),   //insert into set, get handle, save mutable handle
             handleCollider: Some(col_handle),
+            registeredPlayerID: None,
+            id: id,
         };
 
         return go;
     }
 
-    pub fn update(){
+    pub fn update(&self, colliders: &mut DefaultColliderSet<f32>, bodies: &mut DefaultBodySet<f32>, pos1: &Isometry2<f32>, pos2: &Isometry2<f32>){
+        if self.registeredPlayerID == None {
+            return;
+        }
+        let player_vec = match self.registeredPlayerID {
+            Some(constants::PLAYER1_ID) => &pos1.translation.vector,
+            Some(constants::PLAYER2_ID) => &pos2.translation.vector,
+            _ => return
+        };
 
+
+        let go_pos : &Isometry2<f32> = colliders.get(self.handleCollider.unwrap()).unwrap().position();
+        let go_vec = &go_pos.translation.vector;
+
+        let force_multiplier: f32 = 1.5;
+        //we have the position of the player and the  game object -> calc player - game object to get force vector
+        let force_vec = Vector2::new(force_multiplier*(player_vec.get(0).unwrap() - go_vec.get(0).unwrap()), force_multiplier*(player_vec.get(1).unwrap() - go_vec.get(1).unwrap()));
+        let f = Force2::new(force_vec, 0.0f32);
+
+        //apply force to game object
+        let mut object = bodies.get_mut(colliders.get(self.handleCollider.unwrap()).unwrap().body()).unwrap();
+        object.apply_force(0, &f, ForceType::Impulse, true);
+        println!("force applied");
+    }
+
+    pub fn registerPlayer(&mut self, id: i8){
+        //only register player if no player is registered
+        if self.registeredPlayerID == None {
+            self.registeredPlayerID = Some(id);
+        }
+    }
+
+    pub fn deregisterPlayer(&mut self, id: i8){
+        if self.registeredPlayerID == Some(id) {
+            self.registeredPlayerID = None;
+        }
     }
 
     pub fn draw(&self, context: &mut Context, bodies: &mut DefaultBodySet<f32>) -> GameResult<i8>{

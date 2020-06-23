@@ -27,13 +27,14 @@ pub struct Player{
     score: i32,
     //stores a reference to the RigidBodyObject representing the player
     rigid_body_handle:  Option<DefaultBodyHandle>,
-    collider_handle: Option<DefaultColliderHandle>,
+    pub collider_handle: Option<DefaultColliderHandle>,
     sensor_collider_handle: Option<DefaultColliderHandle>,
     acc_handles: HashMap<i8, DefaultForceGeneratorHandle>,
-    LEFT_KEY: KeyCode,
-    RIGHT_KEY: KeyCode,
-    UP_KEY: KeyCode,
-    DOWN_KEY: KeyCode,
+    left_key: KeyCode,
+    right_key: KeyCode,
+    up_key: KeyCode,
+    down_key: KeyCode,
+    id: i8,
 }
 
 impl Player {
@@ -45,16 +46,20 @@ impl Player {
             collider_handle: None,
             sensor_collider_handle: None,
             acc_handles: HashMap::with_capacity(4),
-            LEFT_KEY: KeyCode::Left,
-            RIGHT_KEY: KeyCode::Right,
-            UP_KEY: KeyCode::Up,
-            DOWN_KEY: KeyCode::Down,
+            left_key: KeyCode::Left,
+            right_key: KeyCode::Right,
+            up_key: KeyCode::Up,
+            down_key: KeyCode::Down,
+            id: match first {
+                true => constants::PLAYER1_ID,
+                false => constants::PLAYER2_ID,
+            }
         };
         if !first {
-            p.LEFT_KEY = KeyCode::A;
-            p.RIGHT_KEY = KeyCode::D;
-            p.UP_KEY = KeyCode::W;
-            p.DOWN_KEY = KeyCode::S;
+            p.left_key = KeyCode::A;
+            p.right_key = KeyCode::D;
+            p.up_key = KeyCode::W;
+            p.down_key = KeyCode::S;
         }
         return p;
     }
@@ -78,10 +83,10 @@ impl Player {
             .position(position)
             .gravity_enabled(false)
             .status(BodyStatus::Dynamic)
-            .max_linear_velocity(500.0)
-            .mass(0.1)
+            .max_linear_velocity(1500.0)
+            .mass(100.1)
             .linear_damping(1.0)
-            .user_data(constants::PLAYER_ID)
+            .user_data(self.id)
             .build();
         rigid_body.disable_all_rotations();
         let handle = bodies.insert(rigid_body);
@@ -98,12 +103,12 @@ impl Player {
         let colliderPattern = ColliderDesc::new(shape)
             .density(1.5)
             .material(MaterialHandle::new(BasicMaterial::new(0.3, 0.5)))
-            .margin(35.00)
-            .user_data(constants::PLAYER_ID);
+            .margin(45.00)
+            .user_data(self.id);
         let collider = colliderPattern.build(BodyPartHandle(handle, 0));
         let sensor = colliderPattern
             .sensor(true)
-            .linear_prediction(150.0) //this defines the maximum distance between a player and a game object that still triggers a proximity event
+            .linear_prediction(80.0) //this defines the maximum distance between a player and a game object that still triggers a proximity event
             .build(BodyPartHandle(handle, 0));
         let collider_handle = colliders.insert(collider);
         self.sensor_collider_handle = Some(colliders.insert(sensor));
@@ -114,9 +119,10 @@ impl Player {
         //TODO: update player
 
 
-        if keyboard::is_key_pressed(context, KeyCode::Left) {
+        let force_multiplier: f32 = 800.0;
+        if keyboard::is_key_pressed(context, self.left_key) {
             if !self.acc_handles.contains_key(&constants::LEFT){
-                let mut left_acc= ConstantAcceleration::new(Vector2::new(-180.0f32, 0.0), 0.0);
+                let mut left_acc= ConstantAcceleration::new(Vector2::new(-1.0 * force_multiplier, 0.0), 0.0);
                 left_acc.add_body_part(BodyPartHandle(self.rigid_body_handle.unwrap(), 0));
                 let left_handle = force_generators.insert(Box::new(left_acc));
                 self.acc_handles.insert(constants::LEFT, left_handle);
@@ -127,9 +133,9 @@ impl Player {
                 force_generators.remove(h);
             }
         }
-        if keyboard::is_key_pressed(context, KeyCode::Right) {
+        if keyboard::is_key_pressed(context, self.right_key) {
             if !self.acc_handles.contains_key(&constants::RIGHT){
-                let mut right_acc= ConstantAcceleration::new(Vector2::new(180.0f32, 0.0), 0.0);
+                let mut right_acc= ConstantAcceleration::new(Vector2::new(force_multiplier, 0.0), 0.0);
                 right_acc.add_body_part(BodyPartHandle(self.rigid_body_handle.unwrap(), 0));
                 let right_handle = force_generators.insert(Box::new(right_acc));
                 self.acc_handles.insert(constants::RIGHT, right_handle);
@@ -140,9 +146,9 @@ impl Player {
                 force_generators.remove(h);
             }
         }
-        if keyboard::is_key_pressed(context, KeyCode::Up) {
+        if keyboard::is_key_pressed(context, self.up_key) {
             if !self.acc_handles.contains_key(&constants::UP){
-                let mut up_acc= ConstantAcceleration::new(Vector2::new(0.0, -180.0f32), 0.0);
+                let mut up_acc= ConstantAcceleration::new(Vector2::new(0.0, -1.0 * force_multiplier), 0.0);
                 up_acc.add_body_part(BodyPartHandle(self.rigid_body_handle.unwrap(), 0));
                 let up_handle = force_generators.insert(Box::new(up_acc));
                 self.acc_handles.insert(constants::UP, up_handle);
@@ -153,9 +159,9 @@ impl Player {
                 force_generators.remove(h);
             }
         }
-        if keyboard::is_key_pressed(context, KeyCode::Down) {
+        if keyboard::is_key_pressed(context, self.down_key) {
             if !self.acc_handles.contains_key(&constants::DOWN){
-                let mut down_acc= ConstantAcceleration::new(Vector2::new(0.0, 180.0f32), 0.0);
+                let mut down_acc= ConstantAcceleration::new(Vector2::new(0.0, force_multiplier), 0.0);
                 down_acc.add_body_part(BodyPartHandle(self.rigid_body_handle.unwrap(), 0));
                 let down_handle = force_generators.insert(Box::new(down_acc));
                 self.acc_handles.insert(constants::DOWN, down_handle);
