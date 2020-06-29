@@ -1,6 +1,6 @@
 use crate::player::Player;
 use crate::game_object::GameObject;
-use ggez::graphics::Mesh;
+use ggez::graphics::{Mesh, DrawParam};
 use ggez::event::{EventHandler};
 use ggez::conf::WindowMode;
 use nphysics2d::*;
@@ -41,6 +41,8 @@ pub struct Master{
     pub player2: Player,
     count: i32,                     //test vraible to only the game run a fixed amount of ticks.
 
+    background_image: graphics::Image,
+
 }
 
 impl Master{
@@ -63,6 +65,8 @@ impl Master{
         player2.createRigidBody( &mut bodies);
         player2.create_collider(&mut colliders);
 
+        let background_image = graphics::Image::new(ctx, "/bg.jpg").unwrap();
+
         let mut master = Master{
             window_mode,
              
@@ -77,6 +81,7 @@ impl Master{
             player1: player1,
             player2: player2,
             count: 0,
+            background_image: background_image,
         };
         master.spawn_game_objects();
         return master;
@@ -175,6 +180,10 @@ impl EventHandler for Master {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult<()> {
         graphics::clear(ctx, graphics::WHITE);
+
+        //draw background image
+        graphics::draw(ctx, &self.background_image, DrawParam::default())?;
+
         self.player1.draw(ctx, &mut self.bodies);
         self.player2.draw(ctx, &mut self.bodies);
 
