@@ -1,49 +1,184 @@
 use ggez::graphics::{DrawParam, BlendMode, Mesh};
-use ggez::{graphics, Context, ContextBuilder, GameResult};
-use ggez::event::{self, EventHandler};
+use ggez::{graphics, ContextBuilder, GameResult, Context};
+use ggez::event::{self, EventHandler, KeyCode};
 use ggez::mint::Point2;
+use nphysics2d::object::{RigidBodyDesc, BodyStatus, RigidBody, Collider, ColliderDesc, DefaultBodyHandle, DefaultBodySet, DefaultColliderSet, DefaultColliderHandle, BodyPartHandle};
+use nalgebra::{Isometry2, Vector2};
+use rand::prelude::*;
+use std::f32::consts::PI;
+use std::alloc::handle_alloc_error;
+use ncollide2d::shape::{ShapeHandle, Ball};
+use ggez::nalgebra::{UnitComplex, Isometry};
+use nphysics2d::material::{MaterialHandle, BasicMaterial};
+use std::ops::{Index, Deref, DerefMut};
+use ggez::conf::Conf;
+use std::borrow::{Borrow, BorrowMut};
+use ggez::input::keyboard::KeyboardContext;
+use ggez::input::keyboard;
+use nphysics2d::algebra::ForceType::Force;
+use nphysics2d::algebra::{ForceType, Force2};
+use nphysics2d::force_generator::{ConstantAcceleration, DefaultForceGeneratorSet, DefaultForceGeneratorHandle};
+use std::collections::HashMap;
+use crate::master;
 
-use nphysics2d::object::{DefaultBodySet, DefaultColliderSet ,BodySet, ColliderSet, ColliderDesc, BodyPartHandle, DefaultBodyHandle, RigidBody, Collider};
-
-use crate::master::Master;
-use crate::main::gameSize;
-use crate::game_object::GameObject;
+const LEFT: i8 = 0;
+const RIGHT: i8 = 1;
+const UP: i8 = 2;
+const DOWN: i8 = 3;
 
 pub struct Player{
     //TODO: implement player attributes
     score: i32,
-    threshold: i32,     //min force required to "kill" the player
-    gravity: i32,
-    playerBody: GameObject, //gameObject associated with the player
+    pub gravity: f32,
+    //stores a reference to the RigidBodyObject representing the player
+    rigid_body_handle:  Option<DefaultBodyHandle>,
+    collider_handle: Option<DefaultColliderHandle>,
+    sensor_collider_handle: Option<DefaultColliderHandle>,
+    acc_handles: HashMap<i8, DefaultForceGeneratorHandle>,
 }
 
 impl Player {
-    pub fn new(bodies: DefaultBodySet<f32>, colliders: DefaultColliderSet<f32>) -> Self {
+    pub fn new() -> Self {
+
         //TODO: create a new player in the center of the screen
-        Player {
+        let mut p = Player {
             score: 0,
-            threshold: 100, //TODO fine tune values
-            gravity: 10,
-            playerBody: GameObject::new(Point2::new(gameSize/2, gameSize/2), bodies, colliders, true),
+            gravity: 9.81,
+
+            rigid_body_handle: None,
+            collider_handle: None,
+            sensor_collider_handle: None,
+            acc_handles: HashMap::with_capacity(4),
+        };
+        return p;
+    }
+
+    //TODO integrate this and createCollider into player::new() ???
+    pub fn createRigidBody(&mut self, bodies: &mut DefaultBodySet<f32>){
+
+        //TODO: use context object to make bounds fitted to window
+        let left_bound = 0.0;
+        let right_bound = 800.0;
+        let top_bounds = 0.0;
+        let bottom_bounds = 600.0;
+
+        let mut rng = rand::thread_rng();
+        let x_pos = rng.gen_range(left_bound, right_bound);
+        println!("x_pos: {}", x_pos);
+        let y_pos = rng.gen_range(top_bounds, bottom_bounds);
+
+        let position = Isometry2::new(Vector2::new(x_pos, y_pos), PI);
+
+        let mut rigid_body= RigidBodyDesc::new()
+            .position(position)
+            .gravity_enabled(false)
+            .status(BodyStatus::Dynamic)
+            .mass(1.0)
+            .linear_damping(1.0)
+            .user_data(master::PLAYER_ID)
+            .build();
+        rigid_body.disable_all_rotations();
+        let handle = bodies.insert(rigid_body);
+        self.rigid_body_handle = Some(handle);
+
+    }
+
+    pub fn create_collider(&mut self, colliders: &mut DefaultColliderSet<f32>){
+
+        //TODO: find better exception handling
+        let handle = self.rigid_body_handle.unwrap();
+
+        let shape = ShapeHandle::new(Ball::new(1.5));
+        let colliderPattern = ColliderDesc::new(shape)
+            .density(1.5)
+            .material(MaterialHandle::new(BasicMaterial::new(0.3, 0.5)))
+            .margin(35.00)
+            .user_data(master::PLAYER_ID);
+        let collider = colliderPattern.build(BodyPartHandle(handle, 0));
+        let sensor = colliderPattern
+            .sensor(true)
+            .linear_prediction(150.0) //this defines the maximum distance between a player and a game object that still triggers a proximity event
+            .build(BodyPartHandle(handle, 0));
+        let collider_handle = colliders.insert(collider);
+        self.sensor_collider_handle = Some(colliders.insert(sensor));
+        self.collider_handle = Some(collider_handle);
+    }
+
+    pub fn update(&mut self,  context: &mut Context, bodies: &mut DefaultBodySet<f32>, force_generators: &mut DefaultForceGeneratorSet<f32>) {
+        //TODO: update player
+
+
+        if keyboard::is_key_pressed(context, KeyCode::Left) {
+            if !self.acc_handles.contains_key(&LEFT){
+                let mut left_acc= ConstantAcceleration::new(Vector2::new(-150.0f32, 0.0), 0.0);
+                left_acc.add_body_part(BodyPartHandle(self.rigid_body_handle.unwrap(), 0));
+                let left_handle = force_generators.insert(Box::new(left_acc));
+                self.acc_handles.insert(LEFT, left_handle);
+            }
+
+        } else {
+            if let Some(h) = self.acc_handles.remove(&LEFT){
+                force_generators.remove(h);
+            }
+        }
+        if keyboard::is_key_pressed(context, KeyCode::Right) {
+            if !self.acc_handles.contains_key(&RIGHT){
+                let mut right_acc= ConstantAcceleration::new(Vector2::new(150.0f32, 0.0), 0.0);
+                right_acc.add_body_part(BodyPartHandle(self.rigid_body_handle.unwrap(), 0));
+                let right_handle = force_generators.insert(Box::new(right_acc));
+                self.acc_handles.insert(RIGHT, right_handle);
+            }
+
+        } else {
+            if let Some(h) = self.acc_handles.remove(&RIGHT){
+                force_generators.remove(h);
+            }
+        }
+        if keyboard::is_key_pressed(context, KeyCode::Up) {
+            if !self.acc_handles.contains_key(&UP){
+                let mut up_acc= ConstantAcceleration::new(Vector2::new(0.0, -150.0f32), 0.0);
+                up_acc.add_body_part(BodyPartHandle(self.rigid_body_handle.unwrap(), 0));
+                let up_handle = force_generators.insert(Box::new(up_acc));
+                self.acc_handles.insert(UP, up_handle);
+            }
+
+        } else {
+            if let Some(h) = self.acc_handles.remove(&UP){
+                force_generators.remove(h);
+            }
+        }
+        if keyboard::is_key_pressed(context, KeyCode::Down) {
+            if !self.acc_handles.contains_key(&DOWN){
+                let mut down_acc= ConstantAcceleration::new(Vector2::new(0.0, 150.0f32), 0.0);
+                down_acc.add_body_part(BodyPartHandle(self.rigid_body_handle.unwrap(), 0));
+                let down_handle = force_generators.insert(Box::new(down_acc));
+                self.acc_handles.insert(DOWN, down_handle);
+            }
+
+        } else {
+            if let Some(h) = self.acc_handles.remove(&DOWN){
+                force_generators.remove(h);
+            }
         }
     }
 
-    pub fn update(&mut self) {
-       // TODO Update stuff for player
-       self.playerBody.update(/*TODO input params here*/);
-    }
+    pub fn draw(&self, context: &mut Context, bodies: &mut DefaultBodySet<f32>) -> GameResult<i8>{
 
-    pub fn draw(&self, context: &mut Context) -> GameResult<i8>{
+        let rb_handle = self.rigid_body_handle.unwrap();
+        let rb = bodies.rigid_body(rb_handle).unwrap();
 
-        //these should later be changed to get the real values out of the player struct
-        let x_pos = 200f32;
-        let y_pos = 200f32;
+        let position: &Isometry2<f32> = rb.position();
+        let x :f32 = position.translation.vector.get(0).unwrap().clone();
+        let y :f32 = position.translation.vector.get(1).unwrap().clone();
+
+        //TODO: get real radius
         let radius = 30f32;
+
         let tolerance = 0.00001f32;
         //--
         let p: Point2<f32> =  Point2{
-            x: x_pos,
-            y: y_pos,
+            x,
+            y,
         };
 
         let r2 = graphics::Mesh::new_circle(context, graphics::DrawMode::fill(), p,
@@ -52,3 +187,4 @@ impl Player {
         Ok(0)
     }
 }
+
