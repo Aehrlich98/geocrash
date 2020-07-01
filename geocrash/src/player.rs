@@ -1,6 +1,6 @@
 use ggez::graphics::{DrawParam, BlendMode, Mesh};
-use ggez::{ContextBuilder, GameResult, Context, graphics};
-use ggez::event::{self, KeyCode};
+use ggez::{graphics, ContextBuilder, GameResult, Context};
+use ggez::event::{self, EventHandler, KeyCode};
 use ggez::mint::Point2;
 use nphysics2d::object::{RigidBodyDesc, BodyStatus, RigidBody, Collider, ColliderDesc, DefaultBodyHandle, DefaultBodySet, DefaultColliderSet, DefaultColliderHandle, BodyPartHandle};
 use nalgebra::{Isometry2, Vector2};
@@ -10,7 +10,9 @@ use std::alloc::handle_alloc_error;
 use ncollide2d::shape::{ShapeHandle, Ball};
 use ggez::nalgebra::{UnitComplex, Isometry};
 use nphysics2d::material::{MaterialHandle, BasicMaterial};
+use std::ops::{Index, Deref, DerefMut};
 use ggez::conf::Conf;
+use std::borrow::{Borrow, BorrowMut};
 use ggez::input::keyboard::KeyboardContext;
 use ggez::input::keyboard;
 use nphysics2d::algebra::ForceType::Force;
@@ -22,7 +24,7 @@ use crate::{master, constants};
 
 pub struct Player{
     //TODO: implement player attributes
-    score: i32,
+    pub score: i32,
     //stores a reference to the RigidBodyObject representing the player
     rigid_body_handle:  Option<DefaultBodyHandle>,
     pub collider_handle: Option<DefaultColliderHandle>,
@@ -32,6 +34,7 @@ pub struct Player{
     right_key: KeyCode,
     up_key: KeyCode,
     down_key: KeyCode,
+    color: graphics::Color,
     id: i8,
 }
 
@@ -39,7 +42,7 @@ impl Player {
     pub fn new(first: bool) -> Self {
         //TODO: create a new player in the center of the screen
         let mut p = Player {
-            score: 0,
+            score: 10,
             rigid_body_handle: None,
             collider_handle: None,
             sensor_collider_handle: None,
@@ -51,6 +54,10 @@ impl Player {
             id: match first {
                 true => constants::PLAYER1_ID,
                 false => constants::PLAYER2_ID,
+            },
+            color: match first {
+                true => constants::PLAYER1_COLOR,
+                false => constants::PLAYER2_COLOR,
             }
         };
         if !first {
@@ -65,21 +72,24 @@ impl Player {
     pub fn createRigidBody(&mut self, bodies: &mut DefaultBodySet<f32>){
 
         //TODO: use context object to make bounds fitted to window
-        let left_bound = 0.0;
-        let right_bound = 800.0;
-        let top_bounds = 0.0;
-        let bottom_bounds = 600.0;
+        //let left_bound = 0.0;
+        //let right_bound = 800.0;
+        //let top_bounds = 0.0;
+        //let bottom_bounds = 600.0;
 
-        let mut rng = rand::thread_rng();
-        let x_pos = rng.gen_range(left_bound, right_bound);
-        println!("x_pos: {}", x_pos);
-        let y_pos = rng.gen_range(top_bounds, bottom_bounds);
+        //let mut rng = rand::thread_rng();
+        let mut x_pos = 100.0;
+        if self.id == constants::PLAYER2_ID {
+            x_pos = 700.0;
+        }
+        //println!("x_pos: {}", x_pos);
+        let y_pos = 300.0;
 
         let position = Isometry2::new(Vector2::new(x_pos, y_pos), PI);
 
         let mut rigid_body= RigidBodyDesc::new()
             .position(position)
-            .gravity_enabled(false)
+            .gravity_enabled(true)
             .status(BodyStatus::Dynamic)
             .max_linear_velocity(1500.0)
             .mass(100.1)
@@ -190,11 +200,13 @@ impl Player {
             x,
             y,
         };
-
         let r2 = graphics::Mesh::new_circle(context, graphics::DrawMode::fill(), p,
-            radius, tolerance, graphics::Color::new(0.7, 0.4, 0.9, 0.8))?;
+            radius, tolerance, self.color)?;
         graphics::draw(context, &r2, DrawParam::default())?;
         Ok(0)
+    }
+    pub fn score_min(mut self) {
+        self.score -= 1;
     }
 }
 

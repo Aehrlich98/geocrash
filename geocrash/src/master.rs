@@ -24,6 +24,7 @@ use std::thread::spawn;
 use ncollide2d::query::Proximity;
 use ggez::{Context, GameResult, event, graphics};
 use crate::constants::GAME_SIZE;
+use ggez::mint;
 
 
 pub struct Master{
@@ -139,7 +140,37 @@ impl Master{
 
     fn handle_contact_events(&mut self){
         //check whether player has been shot
+        for (_, go) in &mut self.gameObjList {
+            if let Some(tuple) = self.geometrical_world.contact_pair(&self.colliders, self.player1.collider_handle.unwrap(), go.handleCollider.unwrap(), true) {
+                if go.owned_by == constants::PLAYER2_ID {
+                    self.player1.score -= 1;
+                    println!("Hallo {}",self.player1.score);
+                    go.owned_by = constants::PLAYER1_ID;
+                    if self.player1.score == 0 {
+                        println!("Player2 won");
+                    }
+                }
+            }
+            if let Some(tuple) = self.geometrical_world.contact_pair(&self.colliders, self.player2.collider_handle.unwrap(), go.handleCollider.unwrap(), true) {
+                if go.owned_by == constants::PLAYER1_ID {
+                    self.player2.score -= 1;
+                    println!("Hallo {}",self.player2.score);
+                    go.owned_by = constants::PLAYER2_ID;
+                    if self.player2.score == 0 {
+                        println!("Player1 won");
+                    }
+                }
+            }
+        }
+        if let Some(tuple) = self.geometrical_world.contact_pair(&self.colliders, self.player1.collider_handle.unwrap(), self.player2.collider_handle.unwrap(), true) {
+            println!("Hallo");
+        }
         for contact in self.geometrical_world.contact_events(){
+            
+        }
+        for contact in self.geometrical_world.contacts_with(&self.colliders, self.player1.collider_handle.unwrap(), true) {
+            //let go = self.colliders.get(contact).unwrap().user_data().unwrap();
+            //println!("Contact with Player one")
         }
     }
 
@@ -150,6 +181,7 @@ impl Master{
 
         for (_, go) in &mut self.gameObjList{
             go.update(&mut self.colliders, &mut self.bodies, &player1_pos, &player2_pos);
+            go.timer();
         };
     }
 }
@@ -159,6 +191,8 @@ impl EventHandler for Master {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
         self.player1.update(_ctx, &mut self.bodies, &mut self.force_generators);
         self.player2.update(_ctx, &mut self.bodies, &mut self.force_generators);
+
+        self.update_game_objects();
 
         self.mechanical_world.step(     //move the simulation further one step
             &mut self.geometrical_world,
@@ -184,12 +218,15 @@ impl EventHandler for Master {
 
         //draw background image
         graphics::draw(ctx, &self.background_image, DrawParam::default())?;
-
-        self.player1.draw(ctx, &mut self.bodies);
-        self.player2.draw(ctx, &mut self.bodies);
+        let text = graphics::Text::new(format!("Lives PLayer1 = {}, Lives Player2 = {}",self.player1.score,self.player2.score));
+        let drawpa = DrawParam::new();
+        drawpa.dest(mint::Point2 {x: 100., y: 100.,});
+        graphics::draw(ctx, &text, drawpa)?;
+        self.player1.draw(ctx, &mut self.bodies)?;
+        self.player2.draw(ctx, &mut self.bodies)?;
 
         for (_, go) in &self.gameObjList{
-            go.draw(ctx, &mut self.bodies);
+            go.draw(ctx, &mut self.bodies)?;
         }
         graphics::present(ctx)
     }

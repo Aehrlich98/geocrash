@@ -27,14 +27,17 @@ use rand::Rng;
 use ggez::nalgebra::UnitComplex;
 
 pub struct GameObject {
+    ready: i8,
+    leftgrav: bool,
+    pub owned_by: i8,
     handleRigidBody: Option<DefaultBodyHandle>,    //mutable handles
-    handleCollider: Option<DefaultBodyHandle>,
+    pub handleCollider: Option<DefaultBodyHandle>,
     registeredPlayerID: Option<i8>,
-    id: i8,
+    pub id: i8,
+    color: graphics::Color,
 }
 
 impl GameObject {
-
     //create GameObject, add its rigidbody, collider into the sets from Master
     pub fn new(bodies: &mut DefaultBodySet<f32>, id: i8, colliders: &mut DefaultColliderSet<f32>, right_bound: f32, bottom_bound: f32) -> Self{
 
@@ -52,13 +55,16 @@ impl GameObject {
         let rb_handle = create_rigid_body(position, id, bodies);
         let col_handle = create_collider(rb_handle, id, colliders);
 
-
         let go = GameObject {
             //give handles to GameObject
+            ready: 0,
+            leftgrav: true,
+            owned_by: 6,
             handleRigidBody: Some(rb_handle),   //insert into set, get handle, save mutable handle
             handleCollider: Some(col_handle),
-            registeredPlayerID: None,
+            registeredPlayerID: None, 
             id: id,
+            color: constants::DEFAULT_COLOR,
         };
 
         return go;
@@ -86,22 +92,50 @@ impl GameObject {
         //apply force to game object
         let mut object = bodies.get_mut(colliders.get(self.handleCollider.unwrap()).unwrap().body()).unwrap();
         object.apply_force(0, &f, ForceType::Impulse, true);
-        println!("force applied");
+        //println!("force applied");
+        
+    }
+
+    pub fn timer(&mut self) {
+        
+        if self.ready > 0 && self.leftgrav {
+            self.ready -= 1;
+        } else if self.ready == 0 {
+            self.owned_by = constants::DEFAULT_ID;
+            self.color = constants::DEFAULT_COLOR;
+        }
+        
     }
 
     pub fn registerPlayer(&mut self, id: i8){
         //only register player if no player is registered
-        if self.registeredPlayerID == None {
+        if self.registeredPlayerID == None && self.ready == 0 {
             self.registeredPlayerID = Some(id);
+            if id == constants::PLAYER1_ID {
+                self.color = constants::PLAYER1_COLOR;
+            } else {
+                self.color = constants::PLAYER2_COLOR;
+            }
+            self.owned_by = id;
+            self.ready = 1;
+            self.leftgrav = false;
         }
     }
 
     pub fn deregisterPlayer(&mut self, id: i8){
         if self.registeredPlayerID == Some(id) {
             self.registeredPlayerID = None;
+            if self.ready > 0 {
+                
+                self.ready = 100;
+                println!("Left Player {}",self.ready);
+                self.leftgrav = true;
+            }
         }
+
     }
 
+    
 
     pub fn draw(&self, context: &mut Context, bodies: &mut DefaultBodySet<f32>) -> GameResult<i8>{
         let rb_handle = self.handleRigidBody.unwrap();
@@ -135,14 +169,12 @@ impl GameObject {
             ];
         }
         r2 = graphics::Mesh::new_polygon(context, graphics::DrawMode::fill(), &polygon,
-                                         graphics::Color::new(0.0, 1.0, 1.0, 0.90))?;
+                                         self.color)?;
 
         ggez::graphics::draw(context, &r2, DrawParam::default())?;
         Ok(0)
     }
 }
-
-
 fn create_rigid_body(position: Isometry2<f32>, id: i8, bodies: &mut DefaultBodySet<f32>) -> DefaultBodyHandle{
     //create the necessary isntances for simulation
     let mut rigidBody = RigidBodyDesc::new()
@@ -164,17 +196,17 @@ fn create_collider(rb_handle: DefaultBodyHandle, id: i8, colliders: &mut Default
     //create both triangle and square shapes in equal numbers.
     if id%2 ==0 {
         let points = vec![     //describe triangle
-                               Point2::new(1.0, -1.0),    //TODO check size of collider vs draw()
-                               Point2::new(0.0, 1.0),
-                               Point2::new(-1.0, -1.0),
+                                Point2::new(1.0, -1.0),    //TODO check size of collider vs draw()
+                                Point2::new(0.0, 1.0),
+                                Point2::new(-1.0, -1.0),
         ];
         shape = ShapeHandle::new(ConvexPolygon::try_new(points).expect("faulty creation of complex polygon triangle"));
     }else {
         let points = vec![     //describe square
-                               Point2::new(1.0, -1.0),  //TODO as above, find a scaling transaltion between collider size and this points
-                               Point2::new(1.0, 1.0),
-                               Point2::new(-1.0, 1.0),
-                               Point2::new(-1.0, -1.0),
+                                Point2::new(1.0, -1.0),  //TODO as above, find a scaling transaltion between collider size and this points
+                                Point2::new(1.0, 1.0),
+                                Point2::new(-1.0, 1.0),
+                                Point2::new(-1.0, -1.0),
         ];
         shape = ShapeHandle::new(ConvexPolygon::try_new(points).expect("faulty creation of complex polygon square"));
     }
