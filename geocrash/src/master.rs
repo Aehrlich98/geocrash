@@ -1,7 +1,7 @@
 use crate::player::Player;
 use crate::game_object::GameObject;
 use ggez::graphics::{Mesh, DrawParam};
-use ggez::event::{EventHandler};
+use ggez::event::{KeyCode,EventHandler};
 use ggez::conf::WindowMode;
 use nphysics2d::*;
 extern crate nalgebra as na;
@@ -25,6 +25,7 @@ use ncollide2d::query::Proximity;
 use ggez::{Context, GameResult, event, graphics};
 use crate::constants::GAME_SIZE;
 use ggez::mint;
+use ggez::input::keyboard;
 
 
 pub struct Master{
@@ -42,7 +43,8 @@ pub struct Master{
     pub player1: Player,
     pub player2: Player,
     count: i32,                     //test vraible to only the game run a fixed amount of ticks.
-
+    over: bool,
+    winnerId: i8,
     background_image: graphics::Image,
 
 }
@@ -83,6 +85,8 @@ impl Master{
             player1: player1,
             player2: player2,
             count: 0,
+            over: false,
+            winnerId: 6,
             background_image: background_image,
         };
         master.spawn_game_objects();
@@ -90,6 +94,7 @@ impl Master{
     }
 
     fn spawn_game_objects(&mut self){
+        self.gameObjList.clear();
         let mut id = 50i8;
         while self.gameObjList.len() < (GAME_SIZE / 20) as usize { //place GameObjects, until max number of allowed Objects is reached.
             self.gameObjList.insert(id, GameObject::new(&mut self.bodies, id, &mut self.colliders, self.window_mode.height, self.window_mode.width));
@@ -148,6 +153,8 @@ impl Master{
                     go.owned_by = constants::PLAYER1_ID;
                     if self.player1.score == 0 {
                         println!("Player2 won");
+                        self.over = true;
+                        self.winnerId = constants::PLAYER2_ID;
                     }
                 }
             }
@@ -158,6 +165,8 @@ impl Master{
                     go.owned_by = constants::PLAYER2_ID;
                     if self.player2.score == 0 {
                         println!("Player1 won");
+                        self.over = true;
+                        self.winnerId = constants::PLAYER1_ID;
                     }
                 }
             }
@@ -184,11 +193,23 @@ impl Master{
             go.timer();
         };
     }
+    fn reset(&mut self, ctx: &mut Context) {
+        event::quit(ctx)
+    }
 }
 
 //EventHandler handling events...
 impl EventHandler for Master {
     fn update(&mut self, _ctx: &mut Context) -> GameResult<()> {
+        
+        if self.over {
+            if keyboard::is_key_pressed(_ctx, KeyCode::Space) {
+                self.over = false;
+                self.reset(_ctx);
+            }
+            return Ok(());
+        }
+
         self.player1.update(_ctx, &mut self.bodies, &mut self.force_generators);
         self.player2.update(_ctx, &mut self.bodies, &mut self.force_generators);
 
@@ -218,12 +239,32 @@ impl EventHandler for Master {
 
         //draw background image
         graphics::draw(ctx, &self.background_image, DrawParam::default())?;
-        let text = graphics::Text::new(format!("Lives PLayer1 = {}, Lives Player2 = {}",self.player1.score,self.player2.score));
-        let drawpa = DrawParam::new();
-        drawpa.dest(mint::Point2 {x: 100., y: 100.,});
-        graphics::draw(ctx, &text, drawpa)?;
+        let mut text = graphics::Text::new(format!("Lives PLayer1 = {}",self.player1.score));
+        text.set_bounds(mint::Point2 {x: 800., y: 50.}, graphics::Align::Left);
+        graphics::draw(ctx, &text, DrawParam::default())?;
+        text = graphics::Text::new(format!("Lives PLayer2 = {}",self.player2.score));
+        text.set_bounds(mint::Point2 {x: 800., y: 50.}, graphics::Align::Right);
+        graphics::draw(ctx, &text, DrawParam::default())?;
         self.player1.draw(ctx, &mut self.bodies)?;
         self.player2.draw(ctx, &mut self.bodies)?;
+
+        if self.over {
+            let winnerColor = match  self.winnerId {
+                constants::PLAYER1_ID => constants::PLAYER1_COLOR,
+                _ => constants::PLAYER2_COLOR,
+            };
+            let mut overText = graphics::Text::new("GAME OVER");
+            overText.set_bounds(mint::Point2 {x: 800.,y: 600.}, graphics::Align::Center);
+            overText.set_font(graphics::Font::default(), graphics::Scale { x: 100., y: 100. });
+            graphics::draw(ctx, &overText, DrawParam::default().dest(mint::Point2 {x: 0., y: 200.}).color(winnerColor))?;
+            let mut winnerText = match self.winnerId {
+                constants::PLAYER1_ID => graphics::Text::new("Player 1 won this round"),
+                _ => graphics::Text::new("Player 2 won this round"),
+            };
+            winnerText.set_bounds(mint::Point2 {x: 800.,y: 600.}, graphics::Align::Center);
+            winnerText.set_font(graphics::Font::default(), graphics::Scale { x: 50., y: 50. });
+            graphics::draw(ctx, &winnerText, DrawParam::default().dest(mint::Point2 {x: 0., y: 300.}).color(winnerColor))?;
+        }
 
         for (_, go) in &self.gameObjList{
             go.draw(ctx, &mut self.bodies)?;

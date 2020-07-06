@@ -26,7 +26,7 @@ pub struct Player{
     //TODO: implement player attributes
     pub score: i32,
     //stores a reference to the RigidBodyObject representing the player
-    rigid_body_handle:  Option<DefaultBodyHandle>,
+    pub rigid_body_handle:  Option<DefaultBodyHandle>,
     pub collider_handle: Option<DefaultColliderHandle>,
     sensor_collider_handle: Option<DefaultColliderHandle>,
     acc_handles: HashMap<i8, DefaultForceGeneratorHandle>,
